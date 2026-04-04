@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="sleep-title sleep-desc">
+  <title id="sleep-title">Axoltl Sleeping</title>
+  <desc id="sleep-desc">Axolotl mascot sleeping peacefully in a loaf posture.</desc>
+  <style>
+    .body { fill: #f0d0c8; }
+    .shadow { fill: #e0b8ae; }
+    .accent { stroke: #01696f; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.5; }
+    .accent-fill { fill: #01696f; }
+    .smile { stroke: #28251d; fill: none; stroke-linecap: round; stroke-width: 2.5; }
+    
+    @media (prefers-color-scheme: dark) {
+      .body { fill: #c4a090; }
+      .shadow { fill: #9d7b6e; }
+      .accent { stroke: #4f98a3; }
+      .accent-fill { fill: #4f98a3; }
+      .smile { stroke: #1c1b18; }
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: scale(1, 1); }
+      50% { transform: scale(1.02, 0.96); }
+    }
+    
+    @keyframes nightglow {
+      0%, 100% { opacity: 0.1; }
+      50% { opacity: 0.3; }
+    }
+
+    @keyframes zzz-float {
+      0% { transform: translateY(0) scale(0.5); opacity: 0; }
+      20% { opacity: 1; }
+      70% { opacity: 0.8; }
+      100% { transform: translateY(-15px) scale(1.2); opacity: 0; }
+    }
+
+    .anim-breathe { animation: breathe 4s ease-in-out infinite; transform-origin: 60px 95px; }
+    .anim-nightglow { animation: nightglow 4s ease-in-out infinite; }
+    
+    .zzz-1 { animation: zzz-float 3.5s linear infinite 0s; transform-origin: 78px 44px; }
+    .zzz-2 { animation: zzz-float 3.5s linear infinite 1.2s; transform-origin: 90px 30px; }
+    .zzz-3 { animation: zzz-float 3.5s linear infinite 2.4s; transform-origin: 104px 12px; }
+  </style>
+  <defs>
+    <g id="gill-stalk" class="accent">
+      <path d="M 0,-4 A 4,4 0 0,1 0,4" />
+      <path d="M 4,-8 A 8,8 0 0,1 4,8" />
+      <path d="M 8,-12 A 12,12 0 0,1 8,12" />
+    </g>
+    <!-- Zzz shape -->
+    <path id="z-shape" d="M 0,0 L 7,0 L 0,8 L 7,8" stroke-width="2" />
+  </defs>
+
+  <!-- Ground -->
+  <path d="M 20,95 L 100,95" class="shadow" stroke-width="3" stroke-linecap="round" opacity="0.4" fill="none"/>
+
+  <!-- Sleepy Zzzz floating up independently -->
+  <g class="accent">
+    <g transform="translate(75, 40)" class="zzz-1"><use href="#z-shape" /></g>
+    <g transform="translate(85, 25)" class="zzz-2"><use href="#z-shape" transform="scale(1.25)" stroke-width="1.6" /></g>
+    <g transform="translate(98, 5)" class="zzz-3"><use href="#z-shape" transform="scale(1.5)" stroke-width="1.3" /></g>
+  </g>
+
+  <!-- Context Orb acts as a night light nearby -->
+  <g transform="translate(25, 80)">
+    <circle cx="0" cy="0" r="16" class="accent-fill anim-nightglow" />
+    <circle cx="0" cy="0" r="5" class="accent-fill" opacity="0.9" />
+  </g>
+
+  <g class="anim-breathe">
+    <!-- Tail curled around -->
+    <path d="M 80,85 C 120,80 110,95 80,95 L 40,95 C 20,95 20,80 40,85 Z" class="shadow" />
+    
+    <!-- Loaf Body -->
+    <ellipse cx="60" cy="78" rx="42" ry="20" class="body" />
+
+    <!-- Drooping Gills -->
+    <use href="#gill-stalk" transform="translate(21, 65) scale(-1, 1) rotate(20)" />
+    <use href="#gill-stalk" transform="translate(18, 75) scale(-1, 1) rotate(45)" />
+    <use href="#gill-stalk" transform="translate(24, 85) scale(-1, 1) rotate(60)" />
+
+    <use href="#gill-stalk" transform="translate(99, 65) rotate(20)" />
+    <use href="#gill-stalk" transform="translate(102, 75) rotate(45)" />
+    <use href="#gill-stalk" transform="translate(96, 85) rotate(60)" />
+
+    <g transform="translate(0, 10)">
+      <!-- Soft cheeks -->
+      <ellipse cx="45" cy="70" rx="4.5" ry="2.5" class="shadow" opacity="0.5" />
+      <ellipse cx="75" cy="70" rx="4.5" ry="2.5" class="shadow" opacity="0.5" />
+      
+      <!-- Sleepy Eyes -->
+      <path d="M 46,65 Q 50,68 54,65" class="smile" />
+      <path d="M 66,65 Q 70,68 74,65" class="smile" />
+
+      <!-- Tiny contented smile -->
+      <path d="M 58,72 Q 60,74 62,72" class="smile" />
+    </g>
+  </g>
+</svg>

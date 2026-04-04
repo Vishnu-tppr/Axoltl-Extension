@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="sleep-title sleep-desc">
+  <title id="sleep-title">Axoltl Sleeping</title>
+  <desc id="sleep-desc">Axolotl mascot sleeping peacefully in a loaf posture.</desc>
+  <style>
+    .body { fill: #f0d0c8; }
+    .shadow { fill: #e0b8ae; }
+    .accent { stroke: #01696f; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.5; }
+    .accent-fill { fill: #01696f; }
+    .smile { stroke: #28251d; fill: none; stroke-linecap: round; stroke-width: 2.5; }
+    @media (prefers-color-scheme: dark) {
+      .body { fill: #c4a090; }
+      .shadow { fill: #9d7b6e; }
+      .accent { stroke: #4f98a3; }
+      .accent-fill { fill: #4f98a3; }
+      /* eyes are paths so using stroke */
+      .smile { stroke: #1c1b18; }
+    }
+  </style>
+  <defs>
+    <!-- Gills droopy -->
+    <g id="gill-stalk" class="accent">
+      <path d="M 0,-4 A 4,4 0 0,1 0,4" />
+      <path d="M 4,-8 A 8,8 0 0,1 4,8" />
+      <path d="M 8,-12 A 12,12 0 0,1 8,12" />
+    </g>
+  </defs>
+
+  <!-- Ground -->
+  <path d="M 20,95 L 100,95" stroke="#e0b8ae" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+
+  <!-- Tail curled around the front like a cat -->
+  <path d="M 80,85 C 120,80 110,95 80,95 L 40,95 C 20,95 20,80 40,85 Z" class="shadow" />
+  
+  <!-- "Loaf" Body (flattened ellipse) -->
+  <ellipse cx="60" cy="78" rx="42" ry="20" class="body" />
+
+  <!-- Sleepy Zzzz floating up -->
+  <g class="accent" opacity="0.6">
+    <!-- Small Z -->
+    <path d="M 75,40 L 82,40 L 75,48 L 82,48" stroke-width="2"/>
+    <!-- Med Z -->
+    <path d="M 85,25 L 94,25 L 85,35 L 94,35" stroke-width="2.5"/>
+    <!-- Large Z -->
+    <path d="M 98,5 L 110,5 L 98,18 L 110,18" stroke-width="3"/>
+  </g>
+
+  <!-- Context Orb acts as a night light nearby -->
+  <g transform="translate(25, 80)">
+    <circle cx="0" cy="0" r="16" class="accent-fill" opacity="0.15" />
+    <circle cx="0" cy="0" r="5" class="accent-fill" opacity="0.9" />
+  </g>
+
+  <!-- Drooping Gills -->
+  <!-- Left -->
+  <use href="#gill-stalk" transform="translate(21, 65) scale(-1, 1) rotate(20)" />
+  <use href="#gill-stalk" transform="translate(18, 75) scale(-1, 1) rotate(45)" />
+  <use href="#gill-stalk" transform="translate(24, 85) scale(-1, 1) rotate(60)" />
+
+  <!-- Right -->
+  <use href="#gill-stalk" transform="translate(99, 65) rotate(20)" />
+  <use href="#gill-stalk" transform="translate(102, 75) rotate(45)" />
+  <use href="#gill-stalk" transform="translate(96, 85) rotate(60)" />
+
+  <g transform="translate(0, 10)">
+    <!-- Very soft cheeks -->
+    <ellipse cx="45" cy="70" rx="4.5" ry="2.5" class="shadow" opacity="0.5" />
+    <ellipse cx="75" cy="70" rx="4.5" ry="2.5" class="shadow" opacity="0.5" />
+    
+    <!-- Sleepy Eyes (downward arcs) replacing dots -->
+    <path d="M 46,65 Q 50,68 54,65" class="smile" />
+    <path d="M 66,65 Q 70,68 74,65" class="smile" />
+
+    <!-- Tiny contented smile -->
+    <path d="M 58,72 Q 60,74 62,72" class="smile" />
+  </g>
+</svg>

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-labelledby="micro-title">
+  <title id="micro-title">Axoltl small icon</title>
+  <style>
+    .body { fill: #f0d0c8; }
+    .shadow { fill: #e0b8ae; }
+    .accent { stroke: #01696f; fill: none; stroke-linecap: round; stroke-width: 1.2; }
+    .eyes { fill: #28251d; }
+    .smile { stroke: #28251d; fill: none; stroke-linecap: round; stroke-width: 1.2; }
+    @media (prefers-color-scheme: dark) {
+      .body { fill: #c4a090; }
+      .shadow { fill: #9d7b6e; }
+      .accent { stroke: #4f98a3; }
+      .eyes { fill: #1c1b18; }
+    }
+  </style>
+  <defs>
+    <!-- Simplified gills: just 2 arcs -->
+    <g id="micro-gill" class="accent">
+      <path d="M 0,-1.5 A 1.5,1.5 0 0,1 0,1.5" />
+      <path d="M 2,-3 A 3,3 0 0,1 2,3" />
+    </g>
+  </defs>
+
+  <!-- Body -->
+  <ellipse cx="12" cy="15" rx="9" ry="7.5" class="body" />
+  
+  <!-- Gills Left -->
+  <use href="#micro-gill" transform="translate(4, 11) scale(-1, 1) rotate(-30)" />
+  <use href="#micro-gill" transform="translate(3.5, 16) scale(-1, 1) rotate(20)" />
+
+  <!-- Gills Right -->
+  <use href="#micro-gill" transform="translate(20, 11) rotate(-30)" />
+  <use href="#micro-gill" transform="translate(20.5, 16) rotate(20)" />
+
+  <g transform="translate(0, 0.5)">
+    <!-- Eyes -->
+    <circle cx="8.5" cy="12.5" r="1.5" class="eyes" />
+    <circle cx="15.5" cy="12.5" r="1.5" class="eyes" />
+    <!-- Single dot -->
+    <circle cx="9" cy="12" r="0.5" fill="#ffffff" />
+    <circle cx="16" cy="12" r="0.5" fill="#ffffff" />
+
+    <!-- Smile -->
+    <path d="M 10.5,14.5 Q 12,16 13.5,14.5" class="smile" />
+  </g>
+</svg>

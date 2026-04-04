@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-labelledby="axoltl-icon-title">
+  <title id="axoltl-icon-title">Axoltl app icon</title>
+  <style>
+    .bg { fill: #f7f6f2; }
+    .body { fill: #f0d0c8; }
+    .shadow { fill: #e0b8ae; }
+    .accent { stroke: #01696f; fill: none; stroke-linecap: round; stroke-width: 1.8; }
+    .eyes { fill: #28251d; }
+    .smile { stroke: #28251d; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #1c1b19; }
+      .body { fill: #c4a090; }
+      .shadow { fill: #9d7b6e; }
+      .accent { stroke: #4f98a3; }
+      .eyes { fill: #1c1b18; }
+    }
+  </style>
+  <defs>
+    <g id="gill-stalk" class="accent">
+      <path d="M 0,-1.5 A 1.5,1.5 0 0,1 0,1.5" />
+      <path d="M 2.5,-3.5 A 3.5,3.5 0 0,1 2.5,3.5" />
+      <path d="M 5,-5.5 A 5.5,5.5 0 0,1 5,5.5" />
+    </g>
+    <clipPath id="circle-crop">
+      <circle cx="24" cy="24" r="24" />
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#circle-crop)">
+    <!-- Circular Background -->
+    <rect width="48" height="48" class="bg" />
+
+    <!-- Body outline/base (plumber) -->
+    <ellipse cx="24" cy="38" rx="20" ry="17" class="body" />
+    
+    <!-- Left Gills -->
+    <use href="#gill-stalk" transform="translate(8, 25) scale(-1, 1) rotate(-35)" />
+    <use href="#gill-stalk" transform="translate(4, 32) scale(-1, 1)" />
+    <use href="#gill-stalk" transform="translate(8, 39) scale(-1, 1) rotate(25)" />
+
+    <!-- Right Gills -->
+    <use href="#gill-stalk" transform="translate(40, 25) rotate(-35)" />
+    <use href="#gill-stalk" transform="translate(44, 32)" />
+    <use href="#gill-stalk" transform="translate(40, 39) rotate(25)" />
+
+    <g transform="translate(0, 1)">
+      <!-- Cheeks -->
+      <ellipse cx="15" cy="30" rx="2" ry="1" class="shadow" opacity="0.75" />
+      <ellipse cx="33" cy="30" rx="2" ry="1" class="shadow" opacity="0.75" />
+
+      <!-- Eyes -->
+      <circle cx="18" cy="28" r="3" class="eyes" />
+      <circle cx="30" cy="28" r="3" class="eyes" />
+      <!-- White dot highlights (offset slightly) -->
+      <circle cx="19" cy="27" r="1" fill="#ffffff" />
+      <circle cx="31" cy="27" r="1" fill="#ffffff" />
+
+      <!-- Smile -->
+      <path d="M 21,31 Q 24,34 27,31" class="smile" />
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120" role="img" aria-labelledby="sce_a_title">
+  <title id="sce_a_title">Scenario A: Same Device App Handoff</title>
+  <style>
+    .device { fill: #eaeaec; stroke: #d3d3d8; stroke-width: 2; rx: 4; }
+    .screen { fill: #ffffff; }
+    .body { fill: #f0d0c8; }
+    .shadow { fill: #e0b8ae; }
+    .accent { stroke: #01696f; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+    .accent-fill { fill: #01696f; }
+    .eyes { fill: #28251d; }
+    .smile { stroke: #28251d; fill: none; stroke-linecap: round; stroke-width: 2; }
+    .path-line { stroke: #01696f; stroke-width: 1.5; fill: none; opacity: 0.3; stroke-dasharray: 4,4; }
+    
+    .anthropic { fill: #d48872; }
+    .openai { fill: #10a37f; }
+
+    @media (prefers-color-scheme: dark) {
+      .device { fill: #2a2a2c; stroke: #3a3a3c; }
+      .screen { fill: #1c1b19; }
+      .body { fill: #c4a090; }
+      .shadow { fill: #9d7b6e; }
+      .accent { stroke: #4f98a3; }
+      .accent-fill { fill: #4f98a3; }
+      .eyes { fill: #1c1b18; }
+      .path-line { stroke: #4f98a3; }
+    }
+
+    @keyframes ax-pack { 0%, 15% { transform: scale(1); opacity: 1; } 25%, 100% { transform: scale(0); opacity: 0; } }
+    @keyframes ax-unpack { 0%, 55% { transform: scale(0); opacity: 0; } 65%, 90% { transform: scale(1); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
+    @keyframes local-transfer { 0%, 20% { stroke-dashoffset: 80; opacity: 0; } 25% { opacity: 1; } 55% { stroke-dashoffset: -20; opacity: 1; } 60%, 100% { stroke-dashoffset: -20; opacity: 0; } }
+    @keyframes pulse-ring { 0%, 14% { transform: scale(0.1); opacity: 0; } 15% { transform: scale(0.5); opacity: 1; } 25% { transform: scale(2.5); opacity: 0; } 26%, 100% { transform: scale(2.5); opacity: 0; } }
+    @keyframes pulse-ring-r { 0%, 54% { transform: scale(0.1); opacity: 0; } 55% { transform: scale(0.5); opacity: 1; } 65% { transform: scale(2.5); opacity: 0; } 66%, 100% { transform: scale(2.5); opacity: 0; } }
+
+    .anim-pack { animation: ax-pack 4s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+    .anim-unpack { animation: ax-unpack 4s cubic-bezier(0.1, 0.5, 0.2, 1.2) infinite; }
+    .anim-transfer { animation: local-transfer 4s cubic-bezier(0.4, 0, 0.2, 1) infinite; stroke-width: 3; stroke-linecap: round; fill: none; stroke-dasharray: 10, 100; stroke: #01696f; }
+    .anim-ring-l { animation: pulse-ring 4s ease-out infinite; }
+    .anim-ring-r { animation: pulse-ring-r 4s ease-out infinite; }
+  </style>
+
+  <defs>
+    <g id="mini-session-axoltl" transform="scale(0.35)">
+      <ellipse cx="60" cy="98" rx="28" ry="6" class="shadow" opacity="0.4" />
+      <path d="M 80,60 C 115,40 120,85 85,85 Z" class="shadow" />
+      <rect x="35" y="82" width="10" height="12" rx="5" class="shadow" />
+      <rect x="75" y="82" width="10" height="12" rx="5" class="shadow" />
+      <ellipse cx="60" cy="65" rx="38" ry="28" class="body" />
+      <rect x="42" y="86" width="12" height="15" rx="6" class="body" transform="rotate(15 48 93)"/>
+      <rect x="66" y="86" width="12" height="13" rx="6" class="body" />
+      <g transform="translate(43, 98)"><circle cx="0" cy="0" r="14" class="accent-fill" opacity="0.4" /><circle cx="0" cy="0" r="5" class="accent-fill" /></g>
+      <g transform="translate(0, 3)"><ellipse cx="40" cy="60" rx="4.5" ry="2.5" class="shadow" opacity="0.75" /><ellipse cx="80" cy="60" rx="4.5" ry="2.5" class="shadow" opacity="0.75" /><circle cx="48" cy="55" r="5.5" class="eyes" /><circle cx="72" cy="55" r="5.5" class="eyes" /><circle cx="50" cy="53" r="1.8" fill="#ffffff" /><circle cx="74" cy="53" r="1.8" fill="#ffffff" /><path d="M 54,63 Q 60,69 66,63" class="smile" /></g>
+    </g>
+
+    <!-- Logos -->
+    <g id="logo-claude" transform="scale(0.8)"><circle cx="0" cy="0" r="8" class="anthropic"/><path d="M-2,2 Q0,-2 2,2 M-1,-1 L1,-1" stroke="#fff" fill="none" stroke-width="1.5"/></g>
+    <g id="logo-chatgpt" transform="scale(0.8)"><circle cx="0" cy="0" r="8" class="openai"/><path d="M-3,-2 Q0,2 3,-2 M0,-3 L0,3 M-2,1 L2,1" stroke="#fff" fill="none" stroke-width="1.2"/></g>
+  </defs>
+
+  <!-- Giant single Laptop spanning the screen -->
+  <rect x="15" y="15" width="170" height="85" class="device" />
+  <rect x="18" y="18" width="164" height="79" rx="1" class="screen" />
+  <!-- Keyboard deck -->
+  <path d="M 10,100 L 190,100 L 195,105 L 5,105 Z" class="device" fill="#d3d3d8" />
+  
+  <!-- Left App Window (Claude) -->
+  <rect x="25" y="30" width="70" height="55" rx="3" fill="#f7f7f9" stroke="#e0e0e0" stroke-width="1" />
+  <use href="#logo-claude" x="35" y="40" />
+
+  <!-- Right App Window (ChatGPT) -->
+  <rect x="105" y="30" width="70" height="55" rx="3" fill="#f7f7f9" stroke="#e0e0e0" stroke-width="1" />
+  <use href="#logo-chatgpt" x="115" y="40" />
+
+  <!-- Local straight line transfer path -->
+  <path d="M 60,65 L 140,65" class="path-line" />
+  <path d="M 60,65 L 140,65" class="accent anim-transfer" />
+
+  <circle cx="60" cy="65" r="10" class="accent-fill anim-ring-l" style="transform-origin: 60px 65px;" />
+  <circle cx="140" cy="65" r="10" class="accent-fill anim-ring-r" style="transform-origin: 140px 65px;" />
+
+  <!-- Left Claude App Axoltl -->
+  <g transform="translate(40, 42)">
+    <g class="anim-pack" style="transform-origin: 21px 22px;">
+      <use href="#mini-session-axoltl" />
+    </g>
+  </g>
+
+  <!-- Right ChatGPT App Axoltl -->
+  <g transform="translate(120, 42)">
+    <g class="anim-unpack" style="transform-origin: 21px 22px;">
+      <use href="#mini-session-axoltl" />
+    </g>
+  </g>
+
+</svg>

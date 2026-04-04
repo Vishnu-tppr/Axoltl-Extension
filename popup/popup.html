@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Axoltl</title>
+  <!--
+    FONTS — add this to manifest.json content_security_policy:
+    "content_security_policy": {
+      "extension_pages": "default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'"
+    }
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css">
+  <script src="../crypto/qrcode.js"></script>
+</head>
+<body>
+<div class="card">
+
+  <!-- ── Header ── -->
+  <header class="header">
+      <div class="brand">
+          <img src="../assets/axoltl-icon-48.png" alt="Axoltl" class="brand-logo" />
+          <span class="brand-name">Axoltl</span>
+        </div>
+    <div class="header-actions">
+      <button id="pairBtn" class="icon-btn" title="Pair device" aria-label="Pair device">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+          <path d="M14 14h.01M18 14h.01M14 18h.01M18 18h.01M22 14v4M22 22H18"/>
+        </svg>
+      </button>
+      <button id="settingsBtn" class="icon-btn" title="Settings" aria-label="Settings">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Mascot + Status ── -->
+  <div class="mascot-status" id="mascotStatus">
+    <div class="mascot-wrap">
+      <div id="mascotCanvas" class="mascot-canvas floating"></div>
+      <span id="statusDot" class="dot idle" aria-hidden="true"></span>
+    </div>
+    <div class="status-text">
+      <span id="statusTitle" class="status-title">No session</span>
+      <span id="statusMeta" class="status-meta">Waiting for session...</span>
+    </div>
+  </div>
+
+  <!-- ── Quota Banner ── -->
+  <div id="quotaBanner" class="quota hidden" role="alert">
+    <p id="quotaText"></p>
+    <div class="quota-chips">
+      <button id="quotaChatgpt" class="quota-chip" disabled>ChatGPT</button>
+      <button id="quotaGemini" class="quota-chip" disabled>Gemini</button>
+    </div>
+  </div>
+
+  <!-- ── Primary CTA ── -->
+  <button id="sendPhone" class="primary" disabled>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.42 2 2 0 0 1 3.59 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 5.55 5.55l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 15.38z"/>
+    </svg>
+    Send to Phone
+  </button>
+
+  <!-- ── AI Switch Chips ── -->
+   <!-- <section class="actions">
+        <button id="switchOpenAi" class="action">
+          <span class="action-main"><img src="../assets/chatgpt.png" alt="ChatGPT" class="provider-logo" />Switch to ChatGPT</span>
+          <span aria-hidden="true">→</span>
+        </button>
+        <button id="switchGemini" class="action">
+          <span class="action-main"><img src="../assets/gemini.webp" alt="Gemini" class="provider-logo" />Switch to Gemini</span>
+          <span aria-hidden="true">→</span>
+        </button>
+        <button id="sendPhone" class="action primary">Send to phone →</button>
+        <button id="switchAccount" class="action">
+          <span class="action-main"><img src="../assets/claude.webp" alt="Claude" class="provider-logo" />Switch account</span>
+          <span aria-hidden="true">→</span>
+        </button>
+      </section>  -->
+  <div class="switch-grid">
+    <span class="label">Switch AI</span>
+    <div class="chips">
+      <button id="switchChatgpt" class="chip" disabled data-provider="chatgpt">
+        <span class="chip-icon">
+          <img src="../assets/chatgpt.png" alt="ChatGPT" />
+        </span>
+        <span>ChatGPT</span>
+      </button>
+      <button id="switchGemini" class="chip" disabled data-provider="gemini">
+        <span class="chip-icon">
+          <img src="../assets/gemini.webp" alt="Gemini" />
+        </span>
+        <span>Gemini</span>
+      </button>
+      <button id="switchClaude" class="chip" disabled data-provider="claude">
+        <span class="chip-icon">
+          <img src="../assets/claude.webp" alt="Claude" />
+        </span>
+        <span>Claude</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Settings Panel ── -->
+  <div id="settingsPanel" class="settings-panel" aria-hidden="true">
+    <div class="settings-inner">
+      <div class="settings-field">
+        <span>Device ID (DID)</span>
+        <input id="toDidInput" type="text" placeholder="peer device hash…" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="settings-field">
+        <span>X25519 Public Key</span>
+        <textarea id="toKeyInput" rows="2" placeholder="base64 public key…" spellcheck="false"></textarea>
+      </div>
+      <button id="saveSettingsBtn" class="save-btn">Save settings</button>
+    </div>
+  </div>
+
+  <!-- ── QR Pairing Modal ── -->
+  <div id="qrModal" class="qr-modal hidden" role="dialog" aria-labelledby="qrTitle">
+    <div class="qr-overlay"></div>
+    <div class="qr-content">
+      <div class="qr-header">
+        <h2 id="qrTitle">Pair Device</h2>
+        <button id="qrCloseBtn" class="qr-close" aria-label="Close QR modal">✕</button>
+      </div>
+      <div class="qr-body">
+        <p class="qr-instruction">Scan this QR code with your Axoltl mobile app:</p>
+        <div id="qrCodeContainer" class="qr-code-box"></div>
+        <p class="qr-hint">This is your pairing code. Valid for 5 minutes.</p>
+      </div>
+      <div class="qr-footer">
+        <button id="qrRegenerateBtn" class="qr-btn secondary">Regenerate</button>
+        <button id="qrDoneBtn" class="qr-btn primary">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Toast ── -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+</div>
+<script src="popup.js"></script>
+</body>
+</html>

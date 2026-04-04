@@ -1,0 +1,132 @@
+{
+  "version": "1.0.0",
+  "name": "axoltl_mascot_animation_spec",
+  "description": "Semantic animation specification for Axoltl Lottie implementation.",
+  "metadata": {
+    "fps": 60,
+    "dimensions": { "w": 120, "h": 120 },
+    "palette": {
+      "body": "#f0d0c8",
+      "shadow": "#e0b8ae",
+      "primary": "#01696f",
+      "dark_body": "#c4a090",
+      "dark_primary": "#4f98a3",
+      "eyes": "#28251d"
+    }
+  },
+  "states": {
+    "idle": {
+      "duration_ms": 2000,
+      "loop": true,
+      "properties": {
+        "body_group": {
+          "translateY": {
+            "keyframes": [
+              { "time": 0, "value": 0, "ease": "ease-in-out" },
+              { "time": 1000, "value": -3, "ease": "ease-in-out" },
+              { "time": 2000, "value": 0 }
+            ]
+          }
+        },
+        "gills_group": {
+          "rotate": {
+            "keyframes": [
+              { "time": 0, "value": 0 },
+              { "time": 1000, "value": 2 },
+              { "time": 2000, "value": 0 }
+            ]
+          }
+        }
+      }
+    },
+    "handoff": {
+      "duration_ms": 1500,
+      "loop": false,
+      "properties": {
+        "global_transform": {
+          "translateX": {
+            "keyframes": [
+              { "time": 0, "value": -30, "ease": "ease-in-out" },
+              { "time": 1500, "value": 30 }
+            ]
+          }
+        },
+        "context_orb": {
+          "opacity": {
+            "keyframes": [
+              { "time": 0, "value": 0.3 },
+              { "time": 750, "value": 0.8 },
+              { "time": 1500, "value": 0.3 }
+            ]
+          },
+          "scale": {
+            "keyframes": [
+              { "time": 0, "value": 1.0 },
+              { "time": 750, "value": 1.2 },
+              { "time": 1500, "value": 1.0 }
+            ]
+          }
+        }
+      }
+    },
+    "success": {
+      "duration_ms": 800,
+      "loop": false,
+      "properties": {
+        "body_group": {
+          "rotate": {
+            "keyframes": [
+              { "time": 0, "value": 0 },
+              { "time": 200, "value": -5 },
+              { "time": 600, "value": 5 },
+              { "time": 800, "value": 0 }
+            ]
+          }
+        },
+        "gills_group": {
+          "scaleX": {
+            "keyframes": [
+              { "time": 0, "value": 1.0 },
+              { "time": 400, "value": 1.15 },
+              { "time": 800, "value": 1.0 }
+            ]
+          }
+        }
+      }
+    },
+    "scanning": {
+      "duration_ms": 1200,
+      "loop": true,
+      "description": "Sequential inner-to-outer signal wave across the 3 gill arcs to simulate Wi-Fi transmitting.",
+      "properties": {
+        "gill_arc_inner": {
+          "opacity": { "keyframes": [ { "time": 0, "value": 1 }, { "time": 400, "value": 0.3 } ] }
+        },
+        "gill_arc_middle": {
+          "opacity": { "keyframes": [ { "time": 400, "value": 1 }, { "time": 800, "value": 0.3 } ] }
+        },
+        "gill_arc_outer": {
+          "opacity": { "keyframes": [ { "time": 800, "value": 1 }, { "time": 1200, "value": 0.3 } ] }
+        }
+      }
+    },
+    "sleeping": {
+      "duration_ms": 4000,
+      "loop": true,
+      "properties": {
+        "eyes": {
+          "shape_switch": "circle to downward arc"
+        },
+        "body_group": {
+          "translateY": {
+            "keyframes": [
+              { "time": 0, "value": 0, "ease": "ease-in-out" },
+              { "time": 2000, "value": 2, "ease": "ease-in-out" },
+              { "time": 4000, "value": 0 }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

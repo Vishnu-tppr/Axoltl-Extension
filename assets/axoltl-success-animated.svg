@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="success-title success-desc">
+  <title id="success-title">Axoltl Success</title>
+  <desc id="success-desc">Axolotl mascot cheering, signifying success or completion.</desc>
+  <style>
+    .body { fill: #f0d0c8; }
+    .shadow { fill: #e0b8ae; }
+    .accent { stroke: #01696f; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.5; }
+    .accent-fill { fill: #01696f; }
+    .eyes { fill: #28251d; }
+    .smile { stroke: #28251d; fill: none; stroke-linecap: round; stroke-width: 2.5; }
+    
+    @media (prefers-color-scheme: dark) {
+      .body { fill: #c4a090; }
+      .shadow { fill: #9d7b6e; }
+      .accent { stroke: #4f98a3; }
+      .accent-fill { fill: #4f98a3; }
+      .eyes { fill: #1c1b18; }
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0px); }
+      5% { transform: translateY(-8px); }
+      10% { transform: translateY(0px); }
+      15% { transform: translateY(-4px); }
+      20% { transform: translateY(0px); }
+    }
+
+    @keyframes sparkle-anim {
+      0% { transform: scale(0.5) rotate(0deg); opacity: 0; }
+      20% { transform: scale(1.2) rotate(45deg); opacity: 1; }
+      50% { transform: scale(1) rotate(90deg); opacity: 1; }
+      100% { transform: scale(0) rotate(180deg); opacity: 0; }
+    }
+
+    @keyframes gill-shake {
+      0%, 100% { transform: rotate(0deg); }
+      5% { transform: rotate(10deg); }
+      10% { transform: rotate(-5deg); }
+      15% { transform: rotate(5deg); }
+      20% { transform: rotate(0deg); }
+    }
+
+    @keyframes gill-shake-left {
+      0%, 100% { transform: scale(-1, 1) rotate(0deg); }
+      5% { transform: scale(-1, 1) rotate(10deg); }
+      10% { transform: scale(-1, 1) rotate(-5deg); }
+      15% { transform: scale(-1, 1) rotate(5deg); }
+      20% { transform: scale(-1, 1) rotate(0deg); }
+    }
+
+    .anim-bounce { animation: bounce 3.5s ease-out infinite; transform-origin: 60px 100px; }
+    
+    .sp-1 { animation: sparkle-anim 2.5s ease-in-out infinite 0s; }
+    .sp-2 { animation: sparkle-anim 2.5s ease-in-out infinite 0.8s; }
+    .sp-3 { animation: sparkle-anim 2.5s ease-in-out infinite 1.6s; }
+    .sp-4 { animation: sparkle-anim 2.5s ease-in-out infinite 1.2s; }
+
+    /* Static gills inside inner wrapper get shaken by the wrapper */
+    .anim-shake { animation: gill-shake 3.5s ease-out infinite; }
+    .anim-shake-left { animation: gill-shake-left 3.5s ease-out infinite; }
+  </style>
+
+  <defs>
+    <g id="gill-stalk" class="accent">
+      <path d="M 0,-4 A 4,4 0 0,1 0,4" />
+      <path d="M 5,-9 A 9,9 0 0,1 5,9" />
+      <path d="M 10,-14 A 14,14 0 0,1 10,14" />
+    </g>
+    <path id="sparkle" d="M -5,0 Q 0,0 0,-6 Q 0,0 5,0 Q 0,0 0,6 Q 0,0 -5,0 Z" class="accent-fill" />
+  </defs>
+
+  <!-- Sparkles (animated independently with distinct transform bases) -->
+  <g transform="translate(25, 25)"><use href="#sparkle" class="sp-1" /></g>
+  <g transform="translate(95, 30)"><use href="#sparkle" class="sp-2" /></g>
+  <g transform="translate(20, 80)"><use href="#sparkle" class="sp-3" /></g>
+  <g transform="translate(100, 85)"><use href="#sparkle" class="sp-4" /></g>
+
+  <!-- Shaded back legs planted (not bouncing) -->
+  <rect x="38" y="90" width="12" height="15" rx="6" class="shadow" />
+  <rect x="70" y="90" width="12" height="15" rx="6" class="shadow" />
+  <!-- Drop shadow to ground jump -->
+  <ellipse cx="60" cy="100" rx="18" ry="6" class="shadow" opacity="0.6"/>
+
+  <g class="anim-bounce">
+    <!-- Upright Body -->
+    <ellipse cx="60" cy="65" rx="32" ry="40" class="body" />
+
+    <!-- Arms raised in celebration -->
+    <rect x="25" y="45" width="12" height="18" rx="6" class="body" transform="rotate(-30 30 50)" />
+    <rect x="83" y="45" width="12" height="18" rx="6" class="body" transform="rotate(30 90 50)" />
+
+    <!-- Context ORB floating proudly above head -->
+    <g transform="translate(60, 20)">
+      <circle cx="0" cy="0" r="14" class="accent-fill" opacity="0.25" />
+      <circle cx="0" cy="0" r="6" class="accent-fill" />
+    </g>
+
+    <!-- Gills (Flared outwards exictedly) -->
+    <!-- Left -->
+    <g transform="translate(32, 45)"><g class="anim-shake-left"><use href="#gill-stalk" transform="rotate(-45)"/></g></g>
+    <g transform="translate(28, 60)"><g class="anim-shake-left"><use href="#gill-stalk" transform="rotate(-10)"/></g></g>
+    <g transform="translate(32, 75)"><g class="anim-shake-left"><use href="#gill-stalk" transform="rotate(35)"/></g></g>
+
+    <!-- Right -->
+    <g transform="translate(88, 45)"><g class="anim-shake"><use href="#gill-stalk" transform="rotate(-45)"/></g></g>
+    <g transform="translate(92, 60)"><g class="anim-shake"><use href="#gill-stalk" transform="rotate(-10)"/></g></g>
+    <g transform="translate(88, 75)"><g class="anim-shake"><use href="#gill-stalk" transform="rotate(35)"/></g></g>
+
+    <!-- Face centered higher for upright posture -->
+    <g transform="translate(0, -8)">
+      <ellipse cx="42" cy="62" rx="4.5" ry="2.5" class="shadow" opacity="0.75" />
+      <ellipse cx="78" cy="62" rx="4.5" ry="2.5" class="shadow" opacity="0.75" />
+      
+      <circle cx="50" cy="56" r="5.5" class="eyes" />
+      <circle cx="70" cy="56" r="5.5" class="eyes" />
+      
+      <circle cx="51" cy="53" r="2" fill="#ffffff" />
+      <circle cx="71" cy="53" r="2" fill="#ffffff" />
+
+      <!-- Big Wide Smile (U shape) -->
+      <path d="M 54,62 Q 60,72 66,62" class="smile" />
+    </g>
+  </g>
+</svg>

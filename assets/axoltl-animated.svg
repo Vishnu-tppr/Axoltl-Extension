@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="anim-title">
+  <title id="anim-title">Axoltl Animated Loop</title>
+  <style>
+    .body { fill: #f0d0c8; }
+    .shadow { fill: #e0b8ae; }
+    .accent { stroke: #01696f; fill: none; stroke-linecap: round; stroke-width: 2.5; }
+    .accent-fill { fill: #01696f; }
+    .eyes { fill: #28251d; }
+    .smile { stroke: #28251d; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.5; }
+    
+    @media (prefers-color-scheme: dark) {
+      .body { fill: #c4a090; }
+      .shadow { fill: #9d7b6e; }
+      .accent { stroke: #4f98a3; }
+      .accent-fill { fill: #4f98a3; }
+      .eyes { fill: #1c1b18; }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-4px); }
+    }
+    
+    @keyframes shadow-fade {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.85); }
+    }
+
+    @keyframes orb-glow {
+      0%, 100% { opacity: 0.25; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.3); }
+    }
+
+    @keyframes gl-up { 0%,100%{transform: translate(25px, 48px) scale(-1, 1) rotate(-35deg);} 50%{transform: translate(25px, 48px) scale(-1, 1) rotate(-42deg);} }
+    @keyframes gl-mid { 0%,100%{transform: translate(20px, 62px) scale(-1, 1) rotate(0deg);} 50%{transform: translate(20px, 62px) scale(-1, 1) rotate(-5deg);} }
+    @keyframes gl-dn { 0%,100%{transform: translate(25px, 76px) scale(-1, 1) rotate(35deg);} 50%{transform: translate(25px, 76px) scale(-1, 1) rotate(42deg);} }
+
+    @keyframes gr-up { 0%,100%{transform: translate(95px, 48px) rotate(-35deg);} 50%{transform: translate(95px, 48px) rotate(-42deg);} }
+    @keyframes gr-mid { 0%,100%{transform: translate(100px, 62px) rotate(0deg);} 50%{transform: translate(100px, 62px) rotate(-5deg);} }
+    @keyframes gr-dn { 0%,100%{transform: translate(95px, 76px) rotate(35deg);} 50%{transform: translate(95px, 76px) rotate(42deg);} }
+
+    .anim-float { animation: float 3s ease-in-out infinite; }
+    .anim-shadow { animation: shadow-fade 3s ease-in-out infinite; transform-origin: 60px 110px; }
+    .anim-orb-glow { animation: orb-glow 2s ease-in-out infinite; transform-origin: 0px 0px; }
+
+    .gl-1 { animation: gl-up 3s ease-in-out infinite; }
+    .gl-2 { animation: gl-mid 3s ease-in-out infinite 0.1s; }
+    .gl-3 { animation: gl-dn 3s ease-in-out infinite 0.2s; }
+    
+    .gr-1 { animation: gr-up 3s ease-in-out infinite; }
+    .gr-2 { animation: gr-mid 3s ease-in-out infinite 0.1s; }
+    .gr-3 { animation: gr-dn 3s ease-in-out infinite 0.2s; }
+  </style>
+  <defs>
+    <g id="gill-stalk" class="accent">
+      <path d="M 0,-4 A 4,4 0 0,1 0,4" />
+      <path d="M 5,-9 A 9,9 0 0,1 5,9" />
+      <path d="M 10,-14 A 14,14 0 0,1 10,14" />
+    </g>
+  </defs>
+
+  <!-- Ground Plane Shadow (Stays put, shrinks) -->
+  <ellipse cx="60" cy="110" rx="35" ry="6" class="shadow anim-shadow" />
+
+  <g class="anim-float">
+    <!-- Floating Tail -->
+    <path d="M 80,60 C 115,40 120,85 85,85 Z" class="shadow" />
+    
+    <rect x="35" y="82" width="10" height="12" rx="5" class="shadow" />
+    <rect x="75" y="82" width="10" height="12" rx="5" class="shadow" />
+
+    <ellipse cx="60" cy="65" rx="38" ry="28" class="body" />
+    <ellipse cx="60" cy="83" rx="22" ry="7" class="shadow" opacity="0.8" />
+
+    <!-- Left arm holding context orb -->
+    <rect x="42" y="86" width="12" height="15" rx="6" class="body" transform="rotate(15 48 93)"/>
+    <rect x="66" y="86" width="12" height="13" rx="6" class="body" />
+
+    <!-- Glowing Context Orb -->
+    <g transform="translate(43, 98)">
+      <circle cx="0" cy="0" r="11" class="accent-fill anim-orb-glow" />
+      <circle cx="0" cy="0" r="4.5" class="accent-fill" />
+    </g>
+
+    <!-- Animated Gills -->
+    <use href="#gill-stalk" class="gl-1" />
+    <use href="#gill-stalk" class="gl-2" />
+    <use href="#gill-stalk" class="gl-3" />
+
+    <use href="#gill-stalk" class="gr-1" />
+    <use href="#gill-stalk" class="gr-2" />
+    <use href="#gill-stalk" class="gr-3" />
+
+    <g transform="translate(0, 3)">
+      <ellipse cx="40" cy="60" rx="4.5" ry="2.5" class="shadow" opacity="0.75" />
+      <ellipse cx="80" cy="60" rx="4.5" ry="2.5" class="shadow" opacity="0.75" />
+      
+      <circle cx="48" cy="55" r="5.5" class="eyes" />
+      <circle cx="72" cy="55" r="5.5" class="eyes" />
+      
+      <circle cx="50" cy="53" r="1.8" fill="#ffffff" />
+      <circle cx="74" cy="53" r="1.8" fill="#ffffff" />
+
+      <path d="M 54,63 Q 60,69 66,63" class="smile" />
+    </g>
+  </g>
+</svg>
