@@ -145,11 +145,20 @@
 
     if (h.includes("gemini.google.com")) {
       return {
-        responses: ["model-response", '[class*="model-response"]'],
-        queries: ["user-query", '[class*="user-query"]'],
+        responses: [
+          "model-response",
+          '[class*="model-response"]',
+          ".shared-model-response-container"
+        ],
+        queries: [
+          "user-query",
+          '[class*="user-query"]',
+          ".shared-user-query-container"
+        ],
         getRoleFromNode: (n) => {
           const tag = n.tagName?.toLowerCase();
-          return tag === "user-query" || /user/i.test(n.className) ? "user" : "assistant";
+          const cls = (n.className || "").toLowerCase();
+          return tag === "user-query" || cls.includes("user-query") ? "user" : "assistant";
         },
       };
     }

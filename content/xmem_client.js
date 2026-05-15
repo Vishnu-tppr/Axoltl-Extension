@@ -1,8 +1,8 @@
 /**
- * Axoltl XMem Client — HTTP client for the XMem memory server.
+ * Axoltl XMem Client — HTTP client for the Axoltl Memory Core (AMC).
  *
  * Provides: ingest, search, retrieve, healthCheck, getConfig, saveConfig.
- * Uses a serial RequestQueue to prevent INVALID_CONCURRENT_GRAPH_UPDATE errors.
+ * Serializes requests via RequestQueue to ensure engine stability.
  *
  * Exposes: window.XMemClient
  */
@@ -24,8 +24,7 @@
   };
 
   // ── Request Queue ───────────────────────────────────────────
-  // Serializes all XMem API requests to prevent LangGraph concurrency errors.
-  // Pattern from: /backend-patterns — RequestQueue (serial processing).
+  // Serializes all XMem API requests.
 
   class RequestQueue {
     constructor() {
@@ -33,11 +32,6 @@
       this._processing = false;
     }
 
-    /**
-     * Enqueue a request function. Returns a promise that resolves with the result.
-     * @param {() => Promise<any>} fn - Async function to execute.
-     * @returns {Promise<any>}
-     */
     enqueue(fn) {
       return new Promise((resolve, reject) => {
         this._queue.push({ fn, resolve, reject });
@@ -52,18 +46,14 @@
         this._processing = false;
         return;
       }
-
       this._processing = true;
       const { fn, resolve, reject } = this._queue.shift();
-
       try {
         const result = await fn();
         resolve(result);
       } catch (err) {
         reject(err);
       }
-
-      // Process next item after a small delay to avoid hammering the server
       setTimeout(() => this._processNext(), 50);
     }
   }
@@ -72,10 +62,6 @@
 
   // ── Config Management ───────────────────────────────────────
 
-  /**
-   * Load XMem config from chrome.storage.sync.
-   * @returns {Promise<{apiUrl: string, apiKey: string, userId: string}>}
-   */
   async function getConfig() {
     return new Promise((resolve) => {
       chrome.storage.sync.get(
@@ -91,11 +77,6 @@
     });
   }
 
-  /**
-   * Save XMem config to chrome.storage.sync.
-   * @param {{apiUrl?: string, apiKey?: string, userId?: string}} config
-   * @returns {Promise<void>}
-   */
   async function saveConfig(config) {
     const data = {};
     if (config.apiUrl !== undefined) data[CONFIG_KEYS.apiUrl] = config.apiUrl;
@@ -106,60 +87,33 @@
 
   // ── HTTP Helpers ────────────────────────────────────────────
 
-  /**
-   * Make an authenticated fetch request to the XMem server.
-   * Returns parsed JSON on success, null on network failure (enables fallback).
-   *
-   * @param {string} path - API path (e.g. "/v1/memory/ingest")
-   * @param {object} options - { method, body, timeoutMs }
-   * @returns {Promise<object|null>}
-   */
   async function apiFetch(path, options = {}) {
     const config = await getConfig();
     const { method = "POST", body = null, timeoutMs = 30000 } = options;
-
     const url = `${config.apiUrl.replace(/\/+$/, "")}${path}`;
 
-    const headers = {
-      "Content-Type": "application/json",
-    };
-    if (config.apiKey) {
-      headers["Authorization"] = `Bearer ${config.apiKey}`;
-    }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    const headers = { "Content-Type": "application/json" };
+    if (config.apiKey) headers["Authorization"] = `Bearer ${config.apiKey}`;
 
     try {
-      const resp = await fetch(url, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined,
-        signal: controller.signal,
+      const response = await new Promise((resolve) => {
+        chrome.runtime.sendMessage(
+          {
+            action: "XMEM_PROXY_FETCH",
+            payload: { url, options: { method, headers, body } },
+          },
+          (res) => resolve(res)
+        );
       });
 
-      clearTimeout(timeoutId);
-
-      if (!resp.ok) {
-        const errBody = await resp.json().catch(() => ({}));
-        console.warn(
-          `[XMem Client] ${method} ${path} → ${resp.status}:`,
-          errBody.error || resp.statusText
-        );
+      if (!response || !response.ok) {
+        console.warn(`[Axoltl Client] ${method} ${path} failed:`, response?.error || response?.status);
         return null;
       }
 
-      return await resp.json();
+      return response.data;
     } catch (err) {
-      clearTimeout(timeoutId);
-
-      if (err.name === "AbortError") {
-        console.warn(`[XMem Client] ${method} ${path} → timeout (${timeoutMs}ms)`);
-      } else {
-        // Network error — server unreachable. This is expected when offline.
-        // Don't spam the console — log at debug level.
-        console.debug(`[XMem Client] ${method} ${path} → offline:`, err.message);
-      }
+      console.debug(`[Axoltl Client] ${method} ${path} offline:`, err.message);
       return null;
     }
   }
@@ -167,32 +121,17 @@
   // ── Public API ──────────────────────────────────────────────
 
   const XMemClient = {
-    /**
-     * Check if the XMem server is reachable and ready.
-     * @returns {Promise<{connected: boolean, status: string, uptime: number|null}>}
-     */
     async checkHealth() {
       const result = await apiFetch("/health", { method: "GET", timeoutMs: 5000 });
-      if (!result) {
-        return { connected: false, status: "offline", uptime: null };
-      }
-      const data = result.data || {};
+      if (!result) return { connected: false, status: "offline" };
+      
       return {
-        connected: data.pipelines_ready === true,
-        status: data.status || "unknown",
-        uptime: data.uptime_seconds || null,
+        connected: result.pipelines_ready === true,
+        status: result.status || "online",
+        uptime: result.uptime_seconds || 0,
       };
     },
 
-    /**
-     * Ingest a conversation turn into XMem long-term memory.
-     * Queued to prevent concurrent graph updates.
-     *
-     * @param {string} userQuery - The user's message.
-     * @param {string} agentResponse - The AI's reply.
-     * @param {object} opts - { effortLevel: "low"|"high" }
-     * @returns {Promise<object|null>} - XMem IngestResponse or null on failure.
-     */
     async ingestMemory(userQuery, agentResponse = "", opts = {}) {
       const config = await getConfig();
       return requestQueue.enqueue(() =>
@@ -208,13 +147,6 @@
       );
     },
 
-    /**
-     * Search memories using raw semantic search (no LLM answer).
-     *
-     * @param {string} query - Search query.
-     * @param {object} opts - { topK, domains }
-     * @returns {Promise<{results: Array, total: number}|null>}
-     */
     async searchMemories(query, opts = {}) {
       const config = await getConfig();
       const result = await requestQueue.enqueue(() =>
@@ -222,40 +154,31 @@
           body: {
             query,
             user_id: config.userId,
-            domains: opts.domains || ["profile", "temporal", "summary"],
-            top_k: opts.topK || 10,
+            domains: opts.domains || ["profile", "temporal", "tech", "general"],
+            top_k: opts.topK || 5,
           },
         })
       );
 
-      if (!result || result.status === "error") return null;
+      if (!result || result.status !== "success") return null;
 
-      // Normalize response to match the shape ghost text / commands expect
-      const data = result.data || {};
+      const results = result.results || [];
       return {
-        results: (data.results || []).map((r) => ({
+        results: results.map((r) => ({
           content: r.content || "",
-          domain: r.domain || "unknown",
+          domain: r.domain || "general",
           score: r.score || 0,
           metadata: r.metadata || {},
-          // Map to the shape AxoltlMemory.search() returns
-          userQuery: r.content,
-          aiResponse: "",
+          userQuery: r.user_query || "",
+          aiResponse: r.agent_response || "",
           provider: r.domain,
-          timestamp: Date.now(),
-          source: "xmem-server",
+          timestamp: r.timestamp || Date.now(),
+          source: "axoltl-amc",
         })),
-        total: data.total || 0,
+        total: result.total || results.length,
       };
     },
 
-    /**
-     * Retrieve an LLM-synthesized answer backed by stored memories.
-     *
-     * @param {string} query - The question to answer.
-     * @param {object} opts - { topK }
-     * @returns {Promise<{answer: string, sources: Array, confidence: number}|null>}
-     */
     async retrieveAnswer(query, opts = {}) {
       const config = await getConfig();
       const result = await requestQueue.enqueue(() =>
@@ -268,9 +191,9 @@
         })
       );
 
-      if (!result || result.status === "error") return null;
+      if (!result || result.status !== "success" || !result.data) return null;
 
-      const data = result.data || {};
+      const data = result.data;
       return {
         answer: data.answer || "",
         sources: (data.sources || []).map((s) => ({
@@ -280,26 +203,14 @@
           metadata: s.metadata || {},
         })),
         confidence: data.confidence || 0,
-        model: data.model || "",
+        model: data.model || "Axoltl-AMC",
       };
     },
 
-    /**
-     * Get the current config (for UI display).
-     * @returns {Promise<{apiUrl: string, apiKey: string, userId: string}>}
-     */
     getConfig,
-
-    /**
-     * Save config (from popup settings).
-     * @param {{apiUrl?: string, apiKey?: string, userId?: string}} config
-     * @returns {Promise<void>}
-     */
     saveConfig,
   };
 
-  // ── Expose globally ─────────────────────────────────────────
   window.XMemClient = XMemClient;
-
-  console.log("[XMem Client] Loaded — use window.XMemClient to access the API");
+  console.log("[Axoltl Client] Initialized — talking to Axoltl Memory Core (AMC)");
 })();

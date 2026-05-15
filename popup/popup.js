@@ -426,7 +426,7 @@ document.addEventListener('keydown', e => {
 // ── IndexedDB Helpers ─────────────────────────────────────
 function openMemoryDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('AxoltlMemory', 1);
+    const req = indexedDB.open('axoltl-memory', 1);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains('memories')) {

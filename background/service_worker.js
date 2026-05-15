@@ -506,6 +506,44 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         return;
       }
 
+      if (msg.action === "XMEM_PROXY_FETCH") {
+        const { url, options } = msg.payload;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout for semantic RAG
+
+        try {
+          const fetchOptions = {
+            method: options.method || "GET",
+            headers: options.headers || {},
+            signal: controller.signal
+          };
+
+          if (options.body) {
+            fetchOptions.body = typeof options.body === "string" 
+              ? options.body 
+              : JSON.stringify(options.body);
+          }
+
+          const resp = await fetch(url, fetchOptions);
+          clearTimeout(timeout);
+          
+          let data;
+          const contentType = resp.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            data = await resp.json().catch(() => ({}));
+          } else {
+            const text = await resp.text().catch(() => "");
+            data = { text };
+          }
+
+          sendResponse({ ok: resp.ok, status: resp.status, data });
+        } catch (err) {
+          clearTimeout(timeout);
+          sendResponse({ ok: false, error: err.name === "AbortError" ? "Timeout" : err.message });
+        }
+        return;
+      }
+
       sendResponse({ ok: false, error: "Unknown action" });
     } catch (error) {
       sendResponse({ ok: false, error: String(error) });

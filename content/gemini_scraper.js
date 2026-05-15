@@ -15,8 +15,8 @@
   let lastHash = "";
 
   function strategyWebComponents() {
-    const userQ = document.querySelectorAll("user-query, [class*='user-query'], [class*='query-content']");
-    const modelR = document.querySelectorAll("model-response, [class*='model-response'], [class*='response-content']");
+    const userQ = document.querySelectorAll("user-query, [class*='user-query'], [class*='query-content'], .shared-user-query-container");
+    const modelR = document.querySelectorAll("model-response, [class*='model-response'], [class*='response-content'], .shared-model-response-container");
     if (!userQ.length && !modelR.length) return null;
     const turns = [];
     userQ.forEach(n => {

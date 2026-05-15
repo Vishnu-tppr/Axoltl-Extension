@@ -1,18 +1,18 @@
 /**
  * Axoltl Memory Ghost Text — Inline memory suggestions in AI chat inputs.
  *
- * As you type, searches local IndexedDB memory via AxoltlMemory.search().
- * Shows ghost text at caret position. Tab to accept, Escape to dismiss.
- * Inspired by xmem-extension's UX but backed entirely by local storage.
+ * As you type, searches local and server-side memory via AxoltlMemory.
+ * Shows ghost text at caret position with a premium Teal Glow aesthetic.
+ * Tab to accept, Escape to dismiss.
  */
 
 (function axoltlMemoryGhostText() {
   "use strict";
 
-  const DEBOUNCE_MS = 400;
+  const DEBOUNCE_MS = 600;
   const MIN_QUERY_LEN = 8;
-  const MAX_GHOST_CHARS = 150;
-  const MIN_RELEVANCE = 0.3;
+  const MAX_GHOST_CHARS = 160;
+  const MIN_RELEVANCE = 0.4;
 
   let ghostEl = null;
   let ghostAnswer = "";
@@ -20,17 +20,15 @@
   let inflightReq = null;
   let prevQueryText = "";
   let chipEl = null;
-  let cachedResults = [];
 
   // ── Editor Detection ──────────────────────────────────────
 
   const EDITOR_SELECTORS = [
     "#prompt-textarea",                              // ChatGPT
     'div.ProseMirror[contenteditable="true"]',        // Claude
-    'rich-textarea [contenteditable="true"]',         // Gemini
-    'rich-textarea > div[contenteditable]',           // Gemini alt
+    "div.ql-editor",                                  // Gemini (Quill)
+    'rich-textarea [contenteditable="true"]',         // Gemini Legacy
     'textarea[placeholder*="Ask"]',                   // Perplexity
-    'textarea[placeholder*="ask"]',                   // Perplexity alt
     '[contenteditable="true"][data-placeholder]',     // Generic contenteditable
     "textarea",                                       // Generic textarea
   ];
@@ -59,7 +57,7 @@
     const tail = document.createRange();
     tail.selectNodeContents(el);
     tail.setStart(range.endContainer, range.endOffset);
-    return !tail.toString().trim();
+    return !tail.toString().trim().length;
   }
 
   // ── Caret Position ────────────────────────────────────────
@@ -149,7 +147,7 @@
       }
       current = current.parentElement;
     }
-    return true; // default dark
+    return true;
   }
 
   // ── Ghost Text Rendering ──────────────────────────────────
@@ -160,7 +158,7 @@
 
     const display =
       answer.length > MAX_GHOST_CHARS
-        ? answer.slice(0, MAX_GHOST_CHARS).trimEnd() + "…"
+        ? answer.slice(0, MAX_GHOST_CHARS).trimEnd() + "..."
         : answer;
 
     const currentText = readEditorText(editor);
@@ -174,41 +172,54 @@
     const dark = isDarkBackground(editor);
 
     ghostEl = document.createElement("div");
-    ghostEl.className = "axoltl-ghost";
+    ghostEl.className = "axoltl-ghost-container";
     ghostEl.style.cssText = `
       position: fixed;
       z-index: 2147483647;
       pointer-events: none;
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 6px;
-      max-width: 400px;
+      gap: 12px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: ${dark ? "linear-gradient(90deg, rgba(20, 184, 166, 0.05) 0%, transparent 100%)" : "linear-gradient(90deg, rgba(13, 148, 136, 0.03) 0%, transparent 100%)"};
       opacity: 0;
-      transition: opacity 0.15s ease;
+      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: translateX(-4px);
     `;
 
     const textSpan = document.createElement("span");
     textSpan.textContent = `${prefix}${display}`;
     textSpan.style.cssText = `
-      color: ${dark ? "rgba(16,185,129,0.6)" : "rgba(5,150,105,0.5)"};
+      color: ${dark ? "rgba(45, 212, 191, 0.7)" : "rgba(15, 118, 110, 0.6)"};
       font-style: italic;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      white-space: pre-wrap;
+      text-shadow: 0 0 12px ${dark ? "rgba(45, 212, 191, 0.25)" : "transparent"};
+      letter-spacing: 0.01em;
     `;
     ghostEl.appendChild(textSpan);
 
     const tabBadge = document.createElement("span");
-    tabBadge.textContent = "Tab";
+    const tabIcon = document.createElement("span");
+    tabIcon.textContent = "⇥";
+    tabIcon.style.cssText = "font-size:9px;opacity:0.7;margin-right:2px";
+    tabBadge.appendChild(tabIcon);
+    
+    const tabText = document.createTextNode("Tab");
+    tabBadge.appendChild(tabText);
     tabBadge.style.cssText = `
-      background: ${dark ? "rgba(16,185,129,0.15)" : "rgba(5,150,105,0.1)"};
-      color: ${dark ? "#10b981" : "#059669"};
+      background: ${dark ? "rgba(20, 184, 166, 0.2)" : "rgba(13, 148, 136, 0.15)"};
+      color: ${dark ? "#5eead4" : "#115e59"};
       font-size: 10px;
       font-weight: 700;
-      padding: 1px 5px;
-      border-radius: 3px;
-      border: 1px solid ${dark ? "rgba(16,185,129,0.3)" : "rgba(5,150,105,0.2)"};
+      padding: 2px 6px;
+      border-radius: 6px;
+      border: 1px solid ${dark ? "rgba(45, 212, 191, 0.4)" : "rgba(15, 118, 110, 0.3)"};
       flex-shrink: 0;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      box-shadow: 0 2px 8px ${dark ? "rgba(20, 184, 166, 0.2)" : "rgba(13, 148, 136, 0.15)"};
+      backdrop-filter: blur(4px);
     `;
     ghostEl.appendChild(tabBadge);
 
@@ -217,9 +228,9 @@
     ghostEl.style.fontSize = cs.fontSize;
     ghostEl.style.lineHeight = `${caret.h}px`;
 
-    // Position relative to caret
-    const spaceRight = editorRect.right - caret.x - 16;
-    if (spaceRight > 120) {
+    // Position
+    const spaceRight = editorRect.right - caret.x - 20;
+    if (spaceRight > 150) {
       ghostEl.style.left = `${caret.x}px`;
       ghostEl.style.top = `${caret.y}px`;
       ghostEl.style.maxWidth = `${spaceRight}px`;
@@ -227,11 +238,16 @@
       const padL = parseFloat(cs.paddingLeft) || 0;
       ghostEl.style.left = `${editorRect.left + padL}px`;
       ghostEl.style.top = `${caret.y + caret.h}px`;
-      ghostEl.style.maxWidth = `${editorRect.width - padL * 2 - 16}px`;
+      ghostEl.style.maxWidth = `${editorRect.width - padL * 2 - 20}px`;
     }
 
     document.body.appendChild(ghostEl);
-    requestAnimationFrame(() => { if (ghostEl) ghostEl.style.opacity = "1"; });
+    requestAnimationFrame(() => { 
+      if (ghostEl) {
+        ghostEl.style.opacity = "1";
+        ghostEl.style.transform = "translateX(0)";
+      }
+    });
   }
 
   function showLoadingGhost(caret, editor) {
@@ -245,10 +261,10 @@
       pointer-events: none;
       left: ${caret.x}px;
       top: ${caret.y}px;
-      color: ${dark ? "rgba(16,185,129,0.4)" : "rgba(5,150,105,0.3)"};
+      color: ${dark ? "rgba(20, 184, 166, 0.4)" : "rgba(13, 148, 136, 0.3)"};
       font-style: italic;
       opacity: 0;
-      transition: opacity 0.15s ease;
+      transition: opacity 0.2s ease;
     `;
     const cs = getComputedStyle(editor);
     ghostEl.style.fontFamily = cs.fontFamily;
@@ -279,13 +295,12 @@
 
     insertText(editor, `${prefix}${ghostAnswer}`);
     dismissGhost();
-    showToast("Memory context added ⚡");
+    showToast("Memory context injected ⚡");
     return true;
   }
 
   function insertText(el, text) {
     if (el instanceof HTMLTextAreaElement) {
-      // React-compatible: use native setter
       const nativeSetter = Object.getOwnPropertyDescriptor(
         HTMLTextAreaElement.prototype, "value"
       )?.set;
@@ -314,36 +329,90 @@
       z-index: 2147483647;
       display: none;
       align-items: center;
-      gap: 4px;
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 11px;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11.5px;
       font-weight: 600;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       cursor: pointer;
-      transition: all 0.2s ease;
-      background: ${dark ? "rgba(16,185,129,0.12)" : "rgba(5,150,105,0.08)"};
-      color: ${dark ? "#10b981" : "#059669"};
-      border: 1px solid ${dark ? "rgba(16,185,129,0.25)" : "rgba(5,150,105,0.2)"};
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      background: ${dark ? "rgba(15, 23, 42, 0.85)" : "rgba(255, 255, 255, 0.9)"};
+      color: ${dark ? "#5eead4" : "#0f766e"};
+      border: 1px solid ${dark ? "rgba(45, 212, 191, 0.3)" : "rgba(13, 148, 136, 0.2)"};
+      box-shadow: 0 4px 16px ${dark ? "rgba(0, 0, 0, 0.5)" : "rgba(13, 148, 136, 0.15)"};
+      backdrop-filter: blur(12px);
     `;
-    chipEl.innerHTML = `<span style="font-size:13px">🦎</span> <span class="axoltl-chip-count">0</span> <span class="axoltl-chip-label">memories</span>`;
+    // Status Dot
+    const dot = document.createElement("div");
+    dot.className = "axoltl-status-dot";
+    dot.style.cssText = "width:6px;height:6px;border-radius:50%;background:#94a3b8;margin-right:2px";
+    chipEl.appendChild(dot);
+
+    // SVG Icon (using SVG namespace)
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("width", "14");
+    svg.setAttribute("height", "14");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2.5");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    
+    const path = document.createElementNS(svgNS, "path");
+    path.setAttribute("d", "M12 2a7 7 0 0 1 7 7c0 3-2 5.5-4 7l-3 3.5L9 16c-2-1.5-4-4-4-7a7 7 0 0 1 7-7z");
+    svg.appendChild(path);
+    
+    const circle = document.createElementNS(svgNS, "circle");
+    circle.setAttribute("cx", "12");
+    circle.setAttribute("cy", "9");
+    circle.setAttribute("r", "2.5");
+    svg.appendChild(circle);
+    chipEl.appendChild(svg);
+
+    // Count Span
+    const countSpan = document.createElement("span");
+    countSpan.className = "axoltl-chip-count";
+    countSpan.textContent = "0";
+    chipEl.appendChild(countSpan);
+
+    // Label Span
+    const labelSpan = document.createElement("span");
+    labelSpan.className = "axoltl-chip-label";
+    labelSpan.textContent = "found";
+    chipEl.appendChild(labelSpan);
     document.body.appendChild(chipEl);
 
-    // Position above editor
     const rect = anchor.getBoundingClientRect();
-    chipEl.style.top = `${rect.top - 30}px`;
-    chipEl.style.right = `${window.innerWidth - rect.right + 8}px`;
+    chipEl.style.top = `${rect.top - 34}px`;
+    chipEl.style.right = `${window.innerWidth - rect.right + 12}px`;
 
     return chipEl;
   }
 
-  function updateChip(count, loading = false) {
+  async function updateChip(count, loading = false) {
     if (!chipEl) return;
     const countEl = chipEl.querySelector(".axoltl-chip-count");
     const labelEl = chipEl.querySelector(".axoltl-chip-label");
-    if (countEl) countEl.textContent = loading ? "…" : String(count);
-    if (labelEl) labelEl.textContent = loading ? "searching" : (count === 1 ? "memory" : "memories");
-    chipEl.style.display = count > 0 || loading ? "inline-flex" : "none";
+    const dotEl = chipEl.querySelector(".axoltl-status-dot");
+
+    if (countEl) countEl.textContent = loading ? "..." : String(count);
+    if (labelEl) labelEl.textContent = loading ? "searching" : "memories";
+    
+    const serverConnected = await window.AxoltlMemory.isServerConnected();
+    if (dotEl) {
+      dotEl.style.background = serverConnected ? "#2dd4bf" : "#f43f5e";
+      chipEl.title = serverConnected ? "Connected to Axoltl Memory Core" : "Offline: Using local IndexedDB fallback";
+    }
+
+    if (count > 0 || loading) {
+      chipEl.style.display = "inline-flex";
+      requestAnimationFrame(() => { chipEl.style.opacity = "1"; });
+    } else {
+      chipEl.style.display = "none";
+    }
   }
 
   // ── Autocomplete Engine ───────────────────────────────────
@@ -366,10 +435,14 @@
     }
 
     try {
-      const results = await window.AxoltlMemory.search(queryText, 5);
+      // 30-second timeout for retrieval
+      const searchTask = window.AxoltlMemory.search(queryText, 5);
+      const timeoutTask = new Promise((_, r) => setTimeout(() => r("timeout"), 30000));
+      
+      const results = await Promise.race([searchTask, timeoutTask]);
       if (thisReq.cancelled) return;
+      if (results === "timeout") throw new Error("Search timeout");
 
-      cachedResults = results;
       updateChip(results.length);
 
       if (!results.length || results[0].score < MIN_RELEVANCE) {
@@ -377,7 +450,6 @@
         return;
       }
 
-      // Get synthesized answer for ghost text
       const resp = await window.AxoltlMemory.retrieve(queryText);
       if (thisReq.cancelled) return;
 
@@ -390,11 +462,6 @@
       if (!caret) { dismissGhost(); return; }
 
       const edRect = ed.getBoundingClientRect();
-      if (caret.y < edRect.top - 5 || caret.y > edRect.bottom + 5) {
-        dismissGhost();
-        return;
-      }
-
       showGhost(resp.answer, caret, edRect, ed);
     } catch (e) {
       console.error("[Axoltl Ghost] Search error:", e);
@@ -403,21 +470,30 @@
     }
   }
 
-  // ── Input Listener ────────────────────────────────────────
+  // ── Listener Setup ────────────────────────────────────────
 
-  function setupInputListener() {
-    const editor = findEditor();
-    if (!editor || editor.dataset.axoltlGhostHooked) return;
+  function hookEditor(editor) {
+    if (editor.dataset.axoltlGhostHooked) return;
     editor.dataset.axoltlGhostHooked = "1";
 
-    editor.addEventListener("input", () => {
+    const onInput = () => {
       clearTimeout(debounceTimer);
       dismissGhost();
 
       const text = readEditorText(editor).trim();
       if (text.length >= MIN_QUERY_LEN && isCursorAtEnd(editor)) {
+        ensureChip(editor);
         debounceTimer = setTimeout(() => runAutocomplete(text), DEBOUNCE_MS);
+      } else {
+        updateChip(0);
       }
+    };
+
+    editor.addEventListener("input", onInput);
+    editor.addEventListener("keyup", onInput);
+    
+    editor.addEventListener("focus", () => {
+      ensureChip(editor);
     });
 
     editor.addEventListener("keydown", (e) => {
@@ -431,32 +507,74 @@
         dismissGhost();
       }
     }, true);
+    
+    editor.addEventListener("blur", () => dismissGhost());
+    editor.addEventListener("scroll", () => {
+      if (!ghostAnswer) return;
+      const pos = getCaretXY(editor);
+      if (!pos || !ghostEl) {
+        dismissGhost();
+        return;
+      }
+      const edRect = editor.getBoundingClientRect();
+      if (pos.y < edRect.top || pos.y > edRect.bottom) {
+        dismissGhost();
+        return;
+      }
+      ghostEl.style.left = `${pos.x}px`;
+      ghostEl.style.top = `${pos.y}px`;
+    });
   }
 
-  // ── Toast ─────────────────────────────────────────────────
+  // Dismiss ghost when cursor moves away from end
+  document.addEventListener("selectionchange", () => {
+    if (!ghostAnswer) return;
+    const ed = findEditor();
+    if (!ed || !isCursorAtEnd(ed)) dismissGhost();
+  });
+
+  function mainLoop() {
+    const editor = findEditor();
+    if (!editor) return;
+    hookEditor(editor);
+  }
 
   function showToast(msg) {
     const t = document.createElement("div");
     t.textContent = msg;
     t.style.cssText = `
-      position: fixed; bottom: 20px; right: 20px; z-index: 2147483647;
-      background: #18181b; color: #10b981;
-      padding: 8px 16px; border-radius: 8px;
-      border: 1px solid #27272a;
-      font-family: -apple-system, sans-serif; font-size: 13px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-      opacity: 0; transition: opacity 0.2s ease;
+      position: fixed; bottom: 24px; right: 24px; z-index: 2147483647;
+      background: rgba(15, 23, 42, 0.9); color: #5eead4;
+      padding: 12px 24px; border-radius: 8px;
+      border: 1px solid rgba(45, 212, 191, 0.3);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 13px; font-weight: 500;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+      opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transform: translateY(20px) scale(0.95);
     `;
     document.body.appendChild(t);
-    requestAnimationFrame(() => { t.style.opacity = "1"; });
+    requestAnimationFrame(() => { 
+      t.style.opacity = "1"; 
+      t.style.transform = "translateY(0) scale(1)";
+    });
     setTimeout(() => {
       t.style.opacity = "0";
-      setTimeout(() => t.remove(), 200);
-    }, 2500);
+      t.style.transform = "translateY(20px) scale(0.95)";
+      setTimeout(() => t.remove(), 400);
+    }, 3000);
   }
 
-  // ── Polling for editor (handles SPA navigation) ───────────
+  let observerActive = false;
+  function startObserver() {
+    if (observerActive) return;
+    observerActive = true;
+    new MutationObserver(mainLoop).observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+    mainLoop();
+  }
 
-  setInterval(setupInputListener, 1500);
-  setTimeout(setupInputListener, 800);
+  startObserver();
 })();

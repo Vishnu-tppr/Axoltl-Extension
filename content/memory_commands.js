@@ -21,6 +21,8 @@
   const COMMANDS = [
     { cmd: "/Xingest", desc: "Save this conversation to memory", icon: "💾", action: doIngest },
     { cmd: "/Xsearch", desc: "Search your memory", icon: "🔍", action: doSearch },
+    { cmd: "/mem", desc: "Search your memory (alias)", icon: "🔍", action: doSearch },
+    { cmd: "/memory", desc: "Search your memory (alias)", icon: "🔍", action: doSearch },
     { cmd: "/Xretrieve", desc: "Ask memory a question (LLM answer)", icon: "🧠", action: doRetrieve },
     { cmd: "/Xstats", desc: "Show memory statistics", icon: "📊", action: doStats },
     { cmd: "/Xexport", desc: "Export memories as JSON", icon: "📦", action: doExport },
@@ -94,7 +96,7 @@
 
   function renderDropdown(filter = "") {
     if (!dropdownEl) createDropdown();
-    dropdownEl.innerHTML = "";
+    dropdownEl.textContent = "";
 
     const lf = filter.toLowerCase();
     const filtered = COMMANDS.filter(
@@ -120,13 +122,25 @@
         background: ${idx === selectedIndex ? "#27272a" : "transparent"};
       `;
 
-      div.innerHTML = `
-        <span style="font-size:18px;flex-shrink:0">${item.icon}</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;color:#10b981;font-size:13px">${item.cmd}</div>
-          <div style="font-size:11px;color:#71717a;margin-top:1px">${item.desc}</div>
-        </div>
-      `;
+      const iconSpan = document.createElement("span");
+      iconSpan.style.cssText = "font-size:18px;flex-shrink:0";
+      iconSpan.textContent = item.icon;
+      div.appendChild(iconSpan);
+
+      const textContainer = document.createElement("div");
+      textContainer.style.cssText = "flex:1;min-width:0";
+
+      const cmdDiv = document.createElement("div");
+      cmdDiv.style.cssText = "font-weight:600;color:#10b981;font-size:13px";
+      cmdDiv.textContent = item.cmd;
+      textContainer.appendChild(cmdDiv);
+
+      const descDiv = document.createElement("div");
+      descDiv.style.cssText = "font-size:11px;color:#71717a;margin-top:1px";
+      descDiv.textContent = item.desc;
+      textContainer.appendChild(descDiv);
+
+      div.appendChild(textContainer);
 
       div.onmouseover = () => {
         selectedIndex = idx;
@@ -421,21 +435,50 @@
       transition: transform 0.25s ease;
     `;
 
-    sidebarEl.innerHTML = `
-      <div style="padding:14px 16px;border-bottom:1px solid #27272a;display:flex;justify-content:space-between;align-items:center">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:18px">🦎</span>
-          <span style="font-weight:700;color:#e4e4e7;font-size:14px">${escapeHtml(title)}</span>
-        </div>
-        <div id="axoltl-sidebar-close" style="cursor:pointer;color:#71717a;font-size:18px;padding:4px 8px;border-radius:4px;transition:background 0.1s">✕</div>
-      </div>
-      <div style="flex:1;overflow-y:auto">${htmlContent}</div>
-    `;
+    const header = document.createElement("div");
+    header.style.cssText = "padding:14px 16px;border-bottom:1px solid #27272a;display:flex;justify-content:space-between;align-items:center";
+
+    const titleContainer = document.createElement("div");
+    titleContainer.style.cssText = "display:flex;align-items:center;gap:8px";
+
+    const iconSpan = document.createElement("span");
+    iconSpan.style.cssText = "font-size:18px";
+    iconSpan.textContent = "🦎";
+    titleContainer.appendChild(iconSpan);
+
+    const titleSpan = document.createElement("span");
+    titleSpan.style.cssText = "font-weight:700;color:#e4e4e7;font-size:14px";
+    titleSpan.textContent = title;
+    titleContainer.appendChild(titleSpan);
+
+    header.appendChild(titleContainer);
+
+    const closeBtn = document.createElement("div");
+    closeBtn.id = "axoltl-sidebar-close";
+    closeBtn.style.cssText = "cursor:pointer;color:#71717a;font-size:18px;padding:4px 8px;border-radius:4px;transition:background 0.1s";
+    closeBtn.textContent = "✕";
+    header.appendChild(closeBtn);
+
+    sidebarEl.appendChild(header);
+
+    const contentDiv = document.createElement("div");
+    contentDiv.style.cssText = "flex:1;overflow-y:auto";
+    
+    // Instead of innerHTML for htmlContent, we will append it as nodes if it's already an element,
+    // or as text if it's just text. Since renderHtml creates HTML strings, we need a safe way to append it.
+    // However, if htmlContent is a string of HTML, we might need DOMParser.
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, 'text/html');
+    Array.from(doc.body.childNodes).forEach(node => {
+        contentDiv.appendChild(node);
+    });
+
+    sidebarEl.appendChild(contentDiv);
 
     document.body.appendChild(sidebarEl);
     requestAnimationFrame(() => { sidebarEl.style.transform = "translateX(0)"; });
 
-    sidebarEl.querySelector("#axoltl-sidebar-close").onclick = () => {
+    closeBtn.onclick = () => {
       sidebarEl.style.transform = "translateX(100%)";
       setTimeout(() => { sidebarEl.remove(); sidebarEl = null; }, 250);
     };
