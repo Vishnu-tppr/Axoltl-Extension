@@ -123,6 +123,73 @@
         <textarea id="toKeyInput" rows="2" placeholder="base64 public key…" spellcheck="false"></textarea>
       </div>
       <button id="saveSettingsBtn" class="save-btn">Save settings</button>
+      
+      <!-- Local Memory Settings -->
+      <div id="memory-settings-container" class="xmem-settings-section">
+        <h3 class="xmem-settings-title">
+          <span style="font-size: 1.1em; vertical-align: middle; margin-right: 2px;">❁</span>
+          Memory Engine
+        </h3>
+        <div id="memoryStats" style="padding:6px 0;font-size:12px;color:#71717a">
+          Loading stats...
+        </div>
+        <div class="settings-field toggle-field">
+            <span>Ghost Text</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="memory-ghost-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+        </div>
+        <div class="settings-field toggle-field">
+            <span>Auto-Save Conversations</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="memory-autosave-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+        </div>
+        <div class="xmem-settings-footer" style="gap:8px;flex-wrap:wrap">
+            <button id="memory-export-btn" class="save-btn" style="flex:1;min-width:80px;font-size:11px;display:flex;align-items:center;justify-content:center;gap:4px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export
+            </button>
+            <button id="memory-import-btn" class="save-btn" style="flex:1;min-width:80px;font-size:11px;display:flex;align-items:center;justify-content:center;gap:4px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Import
+            </button>
+            <button id="memory-clear-btn" class="save-btn" style="flex:1;min-width:80px;font-size:11px;background:#7f1d1d;border-color:#991b1b;display:flex;align-items:center;justify-content:center;gap:4px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              Clear
+            </button>
+        </div>
+      </div>
+
+      <!-- XMem Server Settings -->
+      <div id="xmem-settings-container" class="xmem-settings-section" style="margin-top:12px">
+        <h3 class="xmem-settings-title">
+          <span style="font-size: 1.1em; vertical-align: middle; margin-right: 2px;">❁</span>
+          XMem Server
+          <span id="xmemStatusDot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-left:auto;flex-shrink:0" title="Disconnected"></span>
+        </h3>
+        <div id="xmemStatusText" style="padding:2px 0 8px;font-size:11px;color:#71717a">
+          Not connected
+        </div>
+        <div class="settings-field">
+          <span>API URL</span>
+          <input id="xmemApiUrl" type="url" placeholder="http://localhost:8000" autocomplete="off" spellcheck="false" value="http://localhost:8000">
+        </div>
+        <div class="settings-field">
+          <span>API Key</span>
+          <input id="xmemApiKey" type="password" placeholder="Bearer token…" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="settings-field">
+          <span>User ID</span>
+          <input id="xmemUserId" type="text" placeholder="your-username" autocomplete="off" spellcheck="false" value="axoltl-user">
+        </div>
+        <div class="xmem-settings-footer" style="gap:8px;flex-wrap:wrap">
+          <button id="xmemSaveBtn" class="save-btn" style="flex:2;font-size:11px">Save XMem Config</button>
+          <button id="xmemTestBtn" class="save-btn" style="flex:1;font-size:11px;background:#1e3a5f;border-color:#1e40af">Test</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -137,7 +204,8 @@
       <div class="qr-body">
         <p class="qr-instruction">Scan this QR code with your Axoltl mobile app:</p>
         <div id="qrCodeContainer" class="qr-code-box"></div>
-        <p class="qr-hint">This is your pairing code. Valid for 5 minutes.</p>
+
+        <p class="qr-hint">This is your pairing code. Valid for 5 minutes only.</p>
       </div>
       <div class="qr-footer">
         <button id="qrRegenerateBtn" class="qr-btn secondary">Regenerate</button>
@@ -148,6 +216,9 @@
 
   <!-- ── Toast ── -->
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Hidden file input for memory import -->
+  <input type="file" id="memoryFileInput" class="hidden-file-input" accept=".json">
 
 </div>
 <script src="popup.js"></script>

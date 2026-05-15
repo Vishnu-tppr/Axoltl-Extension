@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Axoltl Session Handoff",
-  "version": "0.1.0",
-  "description": "Secure cross-provider and cross-device AI session handoff.",
+  "version": "0.3.0",
+  "description": "Secure cross-provider and cross-device AI session handoff with persistent local memory.",
   "icons": {
     "16": "assets/axoltl-icon-16.png",
     "32": "assets/axoltl-icon-32.png",
@@ -14,7 +14,8 @@
     "tabs",
     "activeTab",
     "scripting",
-    "notifications"
+    "notifications",
+    "clipboardWrite"
   ],
   "host_permissions": [
     "https://claude.ai/*",
@@ -22,9 +23,9 @@
     "https://chat.openai.com/*",
     "https://gemini.google.com/*",
     "https://www.perplexity.ai/*",
-    "https://axoltl-relay.workers.dev/*",
-    "https://axoltl-relay.example.workers.dev/*",
-    "https://axoltl-relay.vishnu-tppr.workers.dev/*"
+    "https://axoltl-relay.vishnu-tppr.workers.dev/*",
+    "http://localhost:8000/*",
+    "http://127.0.0.1:8000/*"
   ],
   "background": {
     "service_worker": "background/service_worker.js",
@@ -42,19 +43,65 @@
   "content_scripts": [
     {
       "matches": ["https://claude.ai/*"],
-      "js": ["content/claude_scraper.js", "content/quota_detector.js"],
+      "js": [
+        "content/claude_scraper.js",
+        "content/quota_detector.js",
+        "content/context_compressor.js",
+        "content/provider_injector.js",
+        "content/xmem_client.js",
+        "content/memory_engine.js",
+        "content/memory_ghost_text.js",
+        "content/memory_commands.js",
+        "content/memory_auto_ingest.js"
+      ],
       "run_at": "document_idle",
       "all_frames": false
     },
     {
       "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
-      "js": ["content/openai_scraper.js", "content/quota_detector.js"],
+      "js": [
+        "content/openai_scraper.js",
+        "content/quota_detector.js",
+        "content/context_compressor.js",
+        "content/provider_injector.js",
+        "content/xmem_client.js",
+        "content/memory_engine.js",
+        "content/memory_ghost_text.js",
+        "content/memory_commands.js",
+        "content/memory_auto_ingest.js"
+      ],
       "run_at": "document_idle",
       "all_frames": false
     },
     {
       "matches": ["https://gemini.google.com/*"],
-      "js": ["content/quota_detector.js"],
+      "js": [
+        "content/gemini_scraper.js",
+        "content/quota_detector.js",
+        "content/context_compressor.js",
+        "content/provider_injector.js",
+        "content/xmem_client.js",
+        "content/memory_engine.js",
+        "content/memory_ghost_text.js",
+        "content/memory_commands.js",
+        "content/memory_auto_ingest.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": ["https://www.perplexity.ai/*"],
+      "js": [
+        "content/perplexity_scraper.js",
+        "content/quota_detector.js",
+        "content/context_compressor.js",
+        "content/provider_injector.js",
+        "content/xmem_client.js",
+        "content/memory_engine.js",
+        "content/memory_ghost_text.js",
+        "content/memory_commands.js",
+        "content/memory_auto_ingest.js"
+      ],
       "run_at": "document_idle",
       "all_frames": false
     }
