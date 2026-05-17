@@ -46,7 +46,7 @@
   }
 
   function strategyArticleElements() {
-    const articles = document.querySelectorAll("article, [data-testid*='conversation-turn']");
+    const articles = document.querySelectorAll("article, [data-testid*='conversation-turn'], [data-testid$='-message']");
     if (articles.length < 2) return null;
 
     const messages = [];
@@ -57,7 +57,7 @@
       // Detect user vs assistant by checking for common markers
       const hasAvatar = node.querySelector("img[alt*='User'], img[alt*='You']");
       const testId = node.getAttribute("data-testid") || "";
-      const role = hasAvatar || /user/i.test(testId) ? "user" : "assistant";
+      const role = hasAvatar || /user/i.test(testId) || testId === "user-message" ? "user" : "assistant";
       messages.push({ role, content: text });
     });
     return messages.length >= 2 ? messages : null;
@@ -66,7 +66,7 @@
   function strategyMarkdownBlocks() {
     // ChatGPT wraps AI responses in .markdown or .prose containers
     const markdownBlocks = document.querySelectorAll(
-      "main .markdown, main .prose, main [class*='whitespace-pre-wrap']"
+      "main .markdown, main .prose, main [class*='whitespace-pre-wrap'], [data-testid$='-message'] .markdown"
     );
     if (!markdownBlocks.length) return null;
 
@@ -78,9 +78,11 @@
       // Walk up to find the message wrapper and check for user/assistant class
       const wrapper = node.closest("[data-message-author-role]") ||
                       node.closest("[data-message-id]") ||
+                      node.closest("[data-testid$='-message']") ||
                       node.parentElement;
-      const roleAttr = wrapper?.getAttribute("data-message-author-role") || "";
-      const role = roleAttr === "user" ? "user" : "assistant";
+      const roleAttr = wrapper?.getAttribute("data-message-author-role") || 
+                      wrapper?.getAttribute("data-testid") || "";
+      const role = /user/i.test(roleAttr) ? "user" : "assistant";
       messages.push({ role, content: text });
     });
     return messages.length >= 1 ? messages : null;

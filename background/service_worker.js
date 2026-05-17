@@ -509,7 +509,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (msg.action === "XMEM_PROXY_FETCH") {
         const { url, options } = msg.payload;
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout for semantic RAG
+        const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout for semantic RAG
 
         try {
           const fetchOptions = {

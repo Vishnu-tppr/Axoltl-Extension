@@ -15,9 +15,27 @@
   let lastHash = "";
 
   function strategyWebComponents() {
-    const userQ = document.querySelectorAll("user-query, [class*='user-query'], [class*='query-content'], .shared-user-query-container");
-    const modelR = document.querySelectorAll("model-response, [class*='model-response'], [class*='response-content'], .shared-model-response-container");
-    if (!userQ.length && !modelR.length) return null;
+    // Gemini uses custom elements like <user-query> and <model-response>
+    // but sometimes updates to generic divs with specific classes.
+    const userQ = document.querySelectorAll("user-query, [class*='user-query'], [class*='query-content'], .shared-user-query-container, [data-test-id='user-query-content']");
+    const modelR = document.querySelectorAll("model-response, [class*='model-response'], [class*='response-content'], .shared-model-response-container, [data-test-id='model-response-content']");
+    
+    if (!userQ.length && !modelR.length) {
+      // Fallback for newer Gemini UI if custom tags are missing
+      const turns = document.querySelectorAll(".conversation-container > div, .chat-history > div");
+      if (turns.length >= 2) {
+        const msgs = [];
+        turns.forEach(n => {
+           const t = n.innerText?.trim();
+           if (!t || t.length < 2) return;
+           const isUser = n.querySelector("[class*='user-query']") || n.classList.contains("user-turn");
+           msgs.push({ role: isUser ? "user" : "assistant", content: t });
+        });
+        return msgs.length >= 2 ? msgs : null;
+      }
+      return null;
+    }
+
     const turns = [];
     userQ.forEach(n => {
       const t = n.innerText?.trim();

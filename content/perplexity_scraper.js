@@ -17,10 +17,10 @@
   function strategyQueryAnswer() {
     // Perplexity separates user queries from AI answers with distinct containers
     const queries = document.querySelectorAll(
-      '[class*="QueryText"], [class*="query-text"], [class*="UserQuery"], [data-testid*="query"]'
+      '[class*="QueryText"], [class*="query-text"], [class*="UserQuery"], [data-testid*="query"], .query-content'
     );
     const answers = document.querySelectorAll(
-      '[class*="AnswerText"], [class*="answer-text"], [class*="AnswerBlock"], .prose, [data-testid*="answer"]'
+      '[class*="AnswerText"], [class*="answer-text"], [class*="AnswerBlock"], .prose, [data-testid*="answer"], .answer-content'
     );
     if (!queries.length && !answers.length) return null;
 
@@ -30,11 +30,19 @@
       if (t && t.length >= 2) turns.push({ role: "user", content: t, top: n.getBoundingClientRect().top });
     });
     answers.forEach(n => {
+      // Filter out small buttons or metadata inside answer blocks
       const t = n.innerText?.trim();
       if (t && t.length >= 5) turns.push({ role: "assistant", content: t, top: n.getBoundingClientRect().top });
     });
     turns.sort((a, b) => a.top - b.top);
-    const msgs = turns.map(t => ({ role: t.role, content: t.content }));
+    
+    // De-duplicate turns that might have been captured by multiple selectors
+    const msgs = [];
+    turns.forEach(t => {
+      if (msgs.length > 0 && msgs[msgs.length - 1].content === t.content) return;
+      msgs.push({ role: t.role, content: t.content });
+    });
+    
     return msgs.length >= 2 ? msgs : null;
   }
 

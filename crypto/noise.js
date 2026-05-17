@@ -6,7 +6,7 @@ export async function generateEphemeralX25519() {
 }
 
 export async function deriveSharedSecret(privateKey, publicKey) {
-  return crypto.subtle.deriveBits({ name: "X25519", privateKey, public: publicKey }, privateKey, 256);
+  return crypto.subtle.deriveBits({ name: "X25519", public: publicKey }, privateKey, 256);
 }
 
 export async function hkdfAesKey(sharedSecret, saltBytes, info = "axoltl-session") {

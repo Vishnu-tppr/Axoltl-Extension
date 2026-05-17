@@ -134,6 +134,8 @@
   let _lastHealthCheck = 0;
   const HEALTH_CHECK_INTERVAL = 60000; // 1 minute
 
+  let _lastSyncTriggered = false;
+
   async function checkServerHealth() {
     if (!window.XMemClient) {
       _serverConnected = false;
@@ -145,8 +147,15 @@
     }
     try {
       const health = await window.XMemClient.checkHealth();
+      const prev = _serverConnected;
       _serverConnected = health.connected;
       _lastHealthCheck = now;
+
+      // Trigger sync if we just connected
+      if (_serverConnected && !prev && !_lastSyncTriggered) {
+        _lastSyncTriggered = true;
+        AxoltlMemory.syncAllLocalMemories().catch(() => {});
+      }
     } catch (e) {
       _serverConnected = false;
     }
@@ -193,8 +202,8 @@
           );
           if (serverResult) {
             console.log("[Axoltl Memory] Ingested via XMem server:", userQuery.slice(0, 50));
-            // Also save locally for offline access
-            this._ingestLocal(userQuery, aiResponse, metadata).catch(() => {});
+            // Also save locally for offline access, marked as synced
+            this._ingestLocal(userQuery, aiResponse, { ...metadata, synced: true }).catch(() => {});
             return serverResult;
           }
         } catch (e) {
@@ -226,6 +235,7 @@
         source: metadata.source || "auto",
         url: metadata.url || window.location.href,
         timestamp: Date.now(),
+        synced: !!metadata.synced,
       };
 
       return new Promise((resolve, reject) => {
@@ -377,10 +387,7 @@
         return r.userQuery.slice(0, 150);
       });
 
-      const answer =
-        results.length === 1
-          ? parts[0]
-          : `Previously discussed: ${parts.join(" | ")}`;
+      const answer = parts.join(" ... ");
 
       return {
         answer: answer.slice(0, 300),
@@ -468,6 +475,45 @@
         };
         req.onerror = (e) => reject(e.target.error);
       });
+    },
+
+    /**
+     * Sync all local unsynced memories to the XMem server.
+     */
+    async syncAllLocalMemories() {
+      if (!window.XMemClient || !(await checkServerHealth())) return 0;
+      
+      console.log("[Axoltl Memory] Starting memory sync...");
+      const database = await openDB();
+      const memories = await getAllMemories(database);
+
+      let syncCount = 0;
+      for (const m of memories) {
+        if (m.synced) continue;
+        
+        try {
+          await window.XMemClient.ingestMemory(m.userQuery, m.aiResponse, {
+            effortLevel: "medium"
+          });
+          
+          // Mark as synced in DB
+          const tx = database.transaction(STORE_MEMORIES, "readwrite");
+          const store = tx.objectStore(STORE_MEMORIES);
+          await new Promise((res) => {
+            const req = store.put({ ...m, synced: true });
+            req.onsuccess = res;
+          });
+          syncCount++;
+        } catch (e) {
+          console.warn("[Axoltl Memory] Sync failed for item:", m.id, e);
+          break; // Stop if server goes away
+        }
+      }
+      
+      if (syncCount > 0) {
+        console.log(`[Axoltl Memory] Sync complete. Pushed ${syncCount} items.`);
+      }
+      return syncCount;
     },
   };
 

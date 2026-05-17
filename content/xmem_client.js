@@ -14,7 +14,7 @@
   const DEFAULTS = {
     apiUrl: "http://localhost:8000",
     apiKey: "",
-    userId: "axoltl-user",
+    userId: "demo_user",
   };
 
   const CONFIG_KEYS = {
@@ -32,9 +32,19 @@
       this._processing = false;
     }
 
-    enqueue(fn) {
+    /**
+     * Enqueue a request. 
+     * @param {Function} fn - The function to execute.
+     * @param {string} tag - Optional tag to allow group cancellation (e.g., "search").
+     */
+    enqueue(fn, tag = null) {
+      // If this is a search and we already have a search in the queue, drop the old ones
+      if (tag === "search") {
+        this._queue = this._queue.filter(item => item.tag !== "search");
+      }
+
       return new Promise((resolve, reject) => {
-        this._queue.push({ fn, resolve, reject });
+        this._queue.push({ fn, tag, resolve, reject });
         if (!this._processing) {
           this._processNext();
         }
@@ -54,7 +64,8 @@
       } catch (err) {
         reject(err);
       }
-      setTimeout(() => this._processNext(), 50);
+      // Short delay to yield to UI
+      setTimeout(() => this._processNext(), 10);
     }
   }
 
@@ -89,33 +100,35 @@
 
   async function apiFetch(path, options = {}) {
     const config = await getConfig();
-    const { method = "POST", body = null, timeoutMs = 30000 } = options;
+    const { method = "POST", body = null, timeoutMs = 60000, tag = null } = options;
     const url = `${config.apiUrl.replace(/\/+$/, "")}${path}`;
 
     const headers = { "Content-Type": "application/json" };
     if (config.apiKey) headers["Authorization"] = `Bearer ${config.apiKey}`;
 
-    try {
-      const response = await new Promise((resolve) => {
-        chrome.runtime.sendMessage(
-          {
-            action: "XMEM_PROXY_FETCH",
-            payload: { url, options: { method, headers, body } },
-          },
-          (res) => resolve(res)
-        );
-      });
+    // Wrap the actual fetch in the prioritized queue
+    return requestQueue.enqueue(async () => {
+      try {
+        const response = await new Promise((resolve) => {
+          chrome.runtime.sendMessage(
+            {
+              action: "XMEM_PROXY_FETCH",
+              payload: { url, options: { method, headers, body } },
+            },
+            (res) => resolve(res)
+          );
+        });
 
-      if (!response || !response.ok) {
-        console.warn(`[Axoltl Client] ${method} ${path} failed:`, response?.error || response?.status);
-        return null;
+        if (!response || !response.ok) {
+          throw new Error(response?.error || `XMem API Error: ${response?.status}`);
+        }
+
+        return response.data;
+      } catch (err) {
+        console.error(`[Axoltl XMemClient] Fetch failed (${path}):`, err);
+        throw err;
       }
-
-      return response.data;
-    } catch (err) {
-      console.debug(`[Axoltl Client] ${method} ${path} offline:`, err.message);
-      return null;
-    }
+    }, tag);
   }
 
   // ── Public API ──────────────────────────────────────────────
@@ -125,42 +138,43 @@
       const result = await apiFetch("/health", { method: "GET", timeoutMs: 5000 });
       if (!result) return { connected: false, status: "offline" };
       
+      // Handle both raw and enveloped health responses
+      const isReady = result.pipelines_ready === true || (result.data && result.data.pipelines_ready === true);
+      const status = result.status || (result.data && result.data.status) || "online";
+      
       return {
-        connected: result.pipelines_ready === true,
-        status: result.status || "online",
-        uptime: result.uptime_seconds || 0,
+        connected: isReady,
+        status: status,
+        uptime: result.uptime_seconds || (result.data && result.data.uptime_seconds) || 0,
       };
     },
 
-    async ingestMemory(userQuery, agentResponse = "", opts = {}) {
+    async ingestMemory(userQuery, agentResponse, opts = {}) {
       const config = await getConfig();
-      return requestQueue.enqueue(() =>
-        apiFetch("/v1/memory/ingest", {
-          body: {
-            user_query: userQuery,
-            agent_response: agentResponse || "Acknowledged.",
-            user_id: config.userId,
-            effort_level: opts.effortLevel || "low",
-            session_datetime: new Date().toISOString(),
-          },
-        })
-      );
+      return apiFetch("/v1/memory/ingest", {
+        body: {
+          user_query: userQuery,
+          agent_response: agentResponse || "Acknowledged.",
+          user_id: config.userId,
+          effort_level: opts.effortLevel || "low",
+          session_datetime: new Date().toISOString(),
+        },
+      });
     },
 
     async searchMemories(query, opts = {}) {
       const config = await getConfig();
-      const result = await requestQueue.enqueue(() =>
-        apiFetch("/v1/memory/search", {
-          body: {
-            query,
-            user_id: config.userId,
-            domains: opts.domains || ["profile", "temporal", "tech", "general"],
-            top_k: opts.topK || 5,
-          },
-        })
-      );
+      const result = await apiFetch("/v1/memory/search", {
+        tag: "search",
+        body: {
+          query,
+          user_id: config.userId,
+          domains: opts.domains || ["profile", "temporal", "tech", "general"],
+          top_k: opts.topK || 5,
+        },
+      });
 
-      if (!result || result.status !== "success") return null;
+      if (!result || (result.status !== "success" && result.status !== "ok")) return null;
 
       const results = result.results || [];
       return {
@@ -181,17 +195,16 @@
 
     async retrieveAnswer(query, opts = {}) {
       const config = await getConfig();
-      const result = await requestQueue.enqueue(() =>
-        apiFetch("/v1/memory/retrieve", {
-          body: {
-            query,
-            user_id: config.userId,
-            top_k: opts.topK || 5,
-          },
-        })
-      );
+      const result = await apiFetch("/v1/memory/retrieve", {
+        tag: "search",
+        body: {
+          query,
+          user_id: config.userId,
+          top_k: opts.topK || 5,
+        },
+      });
 
-      if (!result || result.status !== "success" || !result.data) return null;
+      if (!result || (result.status !== "success" && result.status !== "ok") || !result.data) return null;
 
       const data = result.data;
       return {
@@ -203,7 +216,8 @@
           metadata: s.metadata || {},
         })),
         confidence: data.confidence || 0,
-        model: data.model || "Axoltl-AMC",
+        model: data.model || "AMC-MODEL",
+        steps: data.steps || [],
       };
     },
 

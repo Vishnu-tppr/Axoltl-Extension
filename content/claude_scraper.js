@@ -25,17 +25,25 @@
   // ── Selector strategies (tried in order) ─────────────────
 
   function strategyDataTestId() {
+    // Claude uses conversation-turn as a container, but individual messages inside have data-testid too
     const turns = document.querySelectorAll(
-      '[data-testid*="conversation-turn"], [data-testid*="chat-message"], [data-testid*="message"]'
+      '[data-testid*="conversation-turn"], [data-testid*="chat-message"], [data-testid="user-message"], [data-testid="assistant-message"]'
     );
     if (!turns.length) return null;
 
     const messages = [];
     turns.forEach((node) => {
+      // If we are looking at a conversation-turn, we might want to skip it if it contains sub-messages with testids
+      // But usually Claude puts the text directly or in a child.
       const text = node.innerText?.trim();
       if (!text || text.length < 2) return;
+      
       const testId = node.getAttribute("data-testid") || "";
       const role = /user|human/i.test(testId) ? "user" : "assistant";
+      
+      // Avoid adding the same text twice if nested elements both have data-testid
+      if (messages.length > 0 && messages[messages.length - 1].content === text) return;
+      
       messages.push({ role, content: text });
     });
     return messages.length >= 2 ? messages : null;
@@ -44,23 +52,26 @@
   function strategySemanticClasses() {
     // Claude uses known class patterns for user/assistant blocks
     const userBlocks = document.querySelectorAll(
-      '.font-user-message, [class*="UserMessage"], [class*="human-turn"]'
+      '.font-user-message, [class*="UserMessage"], [class*="human-turn"], .user-message'
     );
     const assistantBlocks = document.querySelectorAll(
-      '.font-claude-message, [class*="AssistantMessage"], [class*="assistant-turn"], [class*="claude-message"]'
+      '.font-claude-message, [class*="AssistantMessage"], [class*="assistant-turn"], [class*="claude-message"], .assistant-message'
     );
     if (!userBlocks.length && !assistantBlocks.length) return null;
 
     const messages = [];
     userBlocks.forEach((node) => {
       const text = node.innerText?.trim();
-      if (text && text.length >= 2) messages.push({ role: "user", content: text });
+      if (text && text.length >= 2) messages.push({ role: "user", content: text, top: node.getBoundingClientRect().top });
     });
     assistantBlocks.forEach((node) => {
       const text = node.innerText?.trim();
-      if (text && text.length >= 2) messages.push({ role: "assistant", content: text });
+      if (text && text.length >= 2) messages.push({ role: "assistant", content: text, top: node.getBoundingClientRect().top });
     });
-    return messages.length >= 2 ? messages : null;
+    
+    // Sort by visual order to maintain conversation flow
+    messages.sort((a, b) => a.top - b.top);
+    return messages.length >= 2 ? messages.map(({role, content}) => ({role, content})) : null;
   }
 
   function strategyAriaRoles() {

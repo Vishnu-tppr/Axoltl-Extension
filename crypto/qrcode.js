@@ -4,7 +4,7 @@
  */
 
 (function () {
-  const QUIET_ZONE = 0;
+  const QUIET_ZONE = 4;
   const EC_LEVEL_BITS = 0b01; // L
   const MASK_PATTERN = 0;
   const FORMAT_MASK = 0b101010000010010;
@@ -144,12 +144,13 @@
   function selectVersion(byteCount) {
     for (let v = 1; v <= 16; v += 1) {
       const entry = VERSION_TABLE[v];
-      // byte mode overhead: 4 bits mode + 8/16 bits count
+      // Byte mode: 4-bit mode indicator + 8 or 16-bit char count + data bytes
+      // Must fit in DATA_CODEWORDS * 8 bits (leave 4 bits for terminator)
       const countBits = v >= 10 ? 16 : 8;
-      const overhead = Math.ceil((4 + countBits) / 8);
-      if (byteCount + overhead <= entry[0]) return v;
+      const totalBitsNeeded = 4 + countBits + (byteCount * 8) + 4;
+      if (totalBitsNeeded <= entry[0] * 8) return v;
     }
-    throw new Error('QR payload too large (max ~589 bytes)');
+    throw new Error('QR payload too large (max ~589 bytes EC-L)');
   }
 
   function createBitBuffer() {
@@ -315,15 +316,20 @@
   }
 
   function placeFormatBits(matrix, reserved, bits, mc) {
+    // Per QR spec ISO 18004 Figure 19:
+    // firstPositions[i] = [x=col, y=row] for format bit i (LSB=0)
+    // Horizontal strip: bit 0-7 along row=8 (cols 0,1,2,3,4,5,7,8)
+    // Vertical strip:   bit 8-14 along col=8 (rows 7,5,4,3,2,1,0)
     const firstPositions = [
-      [8, 0], [8, 1], [8, 2], [8, 3], [8, 4], [8, 5], [8, 7], [8, 8],
-      [7, 8], [5, 8], [4, 8], [3, 8], [2, 8], [1, 8], [0, 8],
+      [0, 8], [1, 8], [2, 8], [3, 8], [4, 8], [5, 8], [7, 8], [8, 8],
+      [8, 7], [8, 5], [8, 4], [8, 3], [8, 2], [8, 1], [8, 0],
     ];
+    // Second copy: bottom-left (col=8, rows mc-1..mc-7) + top-right (row=8, cols mc-8..mc-1)
     const secondPositions = [
-      [mc - 1, 8], [mc - 2, 8], [mc - 3, 8], [mc - 4, 8],
-      [mc - 5, 8], [mc - 6, 8], [mc - 7, 8], [mc - 8, 8],
-      [8, mc - 7], [8, mc - 6], [8, mc - 5], [8, mc - 4],
-      [8, mc - 3], [8, mc - 2], [8, mc - 1],
+      [8, mc - 1], [8, mc - 2], [8, mc - 3], [8, mc - 4],
+      [8, mc - 5], [8, mc - 6], [8, mc - 7],
+      [mc - 8, 8], [mc - 7, 8], [mc - 6, 8], [mc - 5, 8],
+      [mc - 4, 8], [mc - 3, 8], [mc - 2, 8], [mc - 1, 8],
     ];
 
     for (let i = 0; i < 15; i += 1) {
@@ -451,12 +457,14 @@
 
   function drawMatrixToCanvas(canvas, matrix, lightColor, darkColor, width, height) {
     const mc = matrix.length;
+    // quietSize includes the mandatory 4-module quiet zone on each side
     const quietSize = mc + (QUIET_ZONE * 2);
     const moduleSize = Math.max(1, Math.floor(Math.min(width, height) / quietSize));
-    const drawnSize = mc * moduleSize;
-    const offsetX = Math.floor((width - (mc * moduleSize)) / 2);
-    const offsetY = Math.floor((height - (mc * moduleSize)) / 2);
-    const dotRadius = (moduleSize / 2) * 0.9;
+    // Center the entire QR (including quiet zone) in the canvas
+    const totalPx = quietSize * moduleSize;
+    const offsetX = Math.floor((width - totalPx) / 2) + QUIET_ZONE * moduleSize;
+    const offsetY = Math.floor((height - totalPx) / 2) + QUIET_ZONE * moduleSize;
+    const dotRadius = (moduleSize / 2) * 0.85;
 
     canvas.width = width;
     canvas.height = height;
@@ -478,13 +486,13 @@
           const py = offsetY + (y * moduleSize);
 
           if (isFinder(x, y)) {
-            // Draw finders as rounded squares
-            const r = moduleSize * 0.2;
+            // Draw finder modules as slightly rounded squares
+            const r = moduleSize * 0.15;
             ctx.beginPath();
-            ctx.roundRect(px + 0.5, py + 0.5, moduleSize - 1, moduleSize - 1, r);
+            ctx.roundRect(px, py, moduleSize, moduleSize, r);
             ctx.fill();
           } else {
-            // Draw data as dots
+            // Draw data modules as circles
             ctx.beginPath();
             ctx.arc(px + moduleSize / 2, py + moduleSize / 2, dotRadius, 0, Math.PI * 2);
             ctx.fill();

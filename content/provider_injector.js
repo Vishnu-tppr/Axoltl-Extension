@@ -19,19 +19,21 @@ const AxoltlInjector = {
       "div.ProseMirror[contenteditable='true']",
       "[contenteditable='true'][data-placeholder]",
       "fieldset [contenteditable='true']",
+      "div[contenteditable='true']",
       "textarea",
     ],
     chatgpt: [
       "#prompt-textarea",
-      "[id='prompt-textarea']",
-      "textarea[data-id='root']",
+      "[data-testid='apple-not-supported-textarea']", // sometimes seen in mobile/specific views
       "div[contenteditable='true'][data-placeholder]",
+      "textarea[data-id='root']",
       "textarea",
     ],
     gemini: [
       "rich-textarea [contenteditable='true']",
       "rich-textarea > div[contenteditable]",
-      "[contenteditable='true'][aria-label*='prompt']",
+      "div[contenteditable='true'][aria-label*='prompt']",
+      ".ql-editor[contenteditable='true']",
       "textarea",
     ],
     perplexity: [

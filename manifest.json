@@ -23,9 +23,12 @@
     "https://chat.openai.com/*",
     "https://gemini.google.com/*",
     "https://www.perplexity.ai/*",
+    "https://perplexity.ai/*",
     "https://axoltl-relay.vishnu-tppr.workers.dev/*",
     "http://localhost:8000/*",
-    "http://127.0.0.1:8000/*"
+    "http://127.0.0.1:8000/*",
+    "http://localhost:8899/*",
+    "http://127.0.0.1:8899/*"
   ],
   "background": {
     "service_worker": "background/service_worker.js",
@@ -52,7 +55,8 @@
         "content/memory_engine.js",
         "content/memory_ghost_text.js",
         "content/memory_commands.js",
-        "content/memory_auto_ingest.js"
+        "content/memory_auto_ingest.js",
+        "content/memory_injector.js"
       ],
       "run_at": "document_idle",
       "all_frames": false
@@ -68,7 +72,8 @@
         "content/memory_engine.js",
         "content/memory_ghost_text.js",
         "content/memory_commands.js",
-        "content/memory_auto_ingest.js"
+        "content/memory_auto_ingest.js",
+        "content/memory_injector.js"
       ],
       "run_at": "document_idle",
       "all_frames": false
@@ -84,13 +89,14 @@
         "content/memory_engine.js",
         "content/memory_ghost_text.js",
         "content/memory_commands.js",
-        "content/memory_auto_ingest.js"
+        "content/memory_auto_ingest.js",
+        "content/memory_injector.js"
       ],
       "run_at": "document_idle",
       "all_frames": false
     },
     {
-      "matches": ["https://www.perplexity.ai/*"],
+      "matches": ["https://www.perplexity.ai/*", "https://perplexity.ai/*"],
       "js": [
         "content/perplexity_scraper.js",
         "content/quota_detector.js",
@@ -100,7 +106,8 @@
         "content/memory_engine.js",
         "content/memory_ghost_text.js",
         "content/memory_commands.js",
-        "content/memory_auto_ingest.js"
+        "content/memory_auto_ingest.js",
+        "content/memory_injector.js"
       ],
       "run_at": "document_idle",
       "all_frames": false
