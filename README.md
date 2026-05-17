@@ -26,28 +26,39 @@ The extension is the capture and intelligence layer of the Axoltl ecosystem. It 
 
 The extension sits closest to the source of truth: the provider web page. It observes the active chat, compresses the captured context, and either injects it into a new provider tab on the same device or encrypts it for delivery to the phone. The popup gives the user a deliberate control surface, while the service worker handles notifications and background orchestration.
 
-```text
-claude.ai DOM
-     │
-     ▼ MutationObserver (claude_scraper.js)
-session captured
-     │
-     ├─── Memory Pipeline ────► xmem_client.js → POST /v1/memory/ingest → AMC
-     │                          memory_engine.js ← GET /v1/memory/search ← AMC
-     │                          memory_ghost_text.js renders inline autocomplete
-     │
-     ▼ TF-IDF 3-pass compression → LZ4
-compressed bundle (~3000 tokens)
-     │
-     ├─── Switch on same device ──► chatgpt.com?q=[context]
-     │
-     └─── Send to phone ──► X25519+AES-256-GCM encrypt
-                                │
-                                ▼ Cloudflare Worker /push
-                              relay (opaque ciphertext, 5-min TTL)
-                                │
-                                ▼ FCM push notification
-                           Flutter app receives
+```mermaid
+graph TD
+    DOM["🌐 Provider DOM<br/><small>claude.ai · chatgpt.com · gemini · perplexity</small>"]
+    
+    DOM -->|"MutationObserver<br/>claude_scraper.js"| CAP["📋 Session Captured"]
+    
+    CAP --> MEM["🧠 Memory Pipeline"]
+    CAP --> COMP["⚙️ TF-IDF 3-Pass Compression"]
+    
+    subgraph mem ["Axoltl Memory Core (AMC)"]
+        direction LR
+        MEM -->|"xmem_client.js<br/>POST /v1/memory/ingest"| AMC["🗄️ AMC<br/>localhost:8899"]
+        AMC -->|"POST /v1/memory/search"| ENGINE["memory_engine.js"]
+        ENGINE --> GHOST["👻 Ghost-Text<br/>Autocomplete"]
+    end
+    
+    COMP --> BUNDLE["📦 Compressed Bundle<br/><small>~3000 tokens</small>"]
+    
+    BUNDLE --> SWITCH["🔄 Same-Device Switch<br/><small>chatgpt.com?q=[context]</small>"]
+    BUNDLE --> ENCRYPT["🔐 X25519 + AES-256-GCM"]
+    
+    ENCRYPT --> RELAY["☁️ Cloudflare Relay<br/><small>opaque ciphertext · 5-min TTL</small>"]
+    RELAY -->|"FCM Push"| PHONE["📱 Flutter App"]
+
+    style DOM fill:#1a1a2e,stroke:#1ab8b8,color:#e0e0e0
+    style CAP fill:#16213e,stroke:#1ab8b8,color:#e0e0e0
+    style BUNDLE fill:#16213e,stroke:#1ab8b8,color:#e0e0e0
+    style AMC fill:#0f3460,stroke:#1ab8b8,color:#e0e0e0
+    style ENCRYPT fill:#1a1a2e,stroke:#e94560,color:#e0e0e0
+    style RELAY fill:#1a1a2e,stroke:#e94560,color:#e0e0e0
+    style PHONE fill:#1a1a2e,stroke:#e94560,color:#e0e0e0
+    style SWITCH fill:#1a1a2e,stroke:#10b981,color:#e0e0e0
+    style GHOST fill:#0f3460,stroke:#1ab8b8,color:#e0e0e0
 ```
 
 ---

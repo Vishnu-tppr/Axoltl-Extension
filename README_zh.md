@@ -26,25 +26,91 @@
 
 扩展最靠近事实来源，也就是提供方网页。它观察当前聊天，压缩抓到的上下文，然后要么在同一设备上把它注入到新的提供方标签页，要么加密后发送到手机。弹窗提供明确的用户控制面，而后台 service worker 负责通知和后台编排。
 
-```text
-claude.ai DOM
-     │
-     ▼ MutationObserver (claude_scraper.js)
-捕获到会话
-     │
-     ▼ TF-IDF 三遍压缩 → LZ4
-压缩后的数据包（约 3000 tokens）
-     │
-     ├─── 同一设备切换 ──► chatgpt.com?q=[context]
-     │
-     └─── 发送到手机 ──► X25519+AES-256-GCM 加密
-                                │
-                                ▼ Cloudflare Worker /push
-                              中继（只有密文，TTL 5 分钟）
-                                │
-                                ▼ FCM 推送通知
-                           Flutter 应用接收
+```mermaid
+graph TD
+    DOM["🌐 提供方 DOM<br/><small>claude.ai · chatgpt.com · gemini · perplexity</small>"]
+    
+    DOM -->|"MutationObserver<br/>claude_scraper.js"| CAP["📋 会话已捕获"]
+    
+    CAP --> MEM["🧠 记忆管线"]
+    CAP --> COMP["⚙️ TF-IDF 三遍压缩"]
+    
+    subgraph mem ["Axoltl 记忆核心 (AMC)"]
+        direction LR
+        MEM -->|"xmem_client.js<br/>POST /v1/memory/ingest"| AMC["🗄️ AMC<br/>localhost:8899"]
+        AMC -->|"POST /v1/memory/search"| ENGINE["memory_engine.js"]
+        ENGINE --> GHOST["👻 幽灵文本<br/>自动补全"]
+    end
+    
+    COMP --> BUNDLE["📦 压缩包<br/><small>约 3000 tokens</small>"]
+    
+    BUNDLE --> SWITCH["🔄 同设备切换<br/><small>chatgpt.com?q=[context]</small>"]
+    BUNDLE --> ENCRYPT["🔐 X25519 + AES-256-GCM"]
+    
+    ENCRYPT --> RELAY["☁️ Cloudflare 中继<br/><small>不可读密文 · 5 分钟 TTL</small>"]
+    RELAY -->|"FCM 推送"| PHONE["📱 Flutter 应用"]
+
+    style DOM fill:#1a1a2e,stroke:#1ab8b8,color:#e0e0e0
+    style CAP fill:#16213e,stroke:#1ab8b8,color:#e0e0e0
+    style BUNDLE fill:#16213e,stroke:#1ab8b8,color:#e0e0e0
+    style AMC fill:#0f3460,stroke:#1ab8b8,color:#e0e0e0
+    style ENCRYPT fill:#1a1a2e,stroke:#e94560,color:#e0e0e0
+    style RELAY fill:#1a1a2e,stroke:#e94560,color:#e0e0e0
+    style PHONE fill:#1a1a2e,stroke:#e94560,color:#e0e0e0
+    style SWITCH fill:#1a1a2e,stroke:#10b981,color:#e0e0e0
+    style GHOST fill:#0f3460,stroke:#1ab8b8,color:#e0e0e0
 ```
+
+---
+
+## 🧠 Axoltl 记忆核心 (AMC) 集成
+
+扩展通过本地运行在 `localhost:8899` 上的 **Axoltl 记忆核心** 服务器，提供跨会话的持久语义长期记忆：
+
+```mermaid
+sequenceDiagram
+    participant 用户 as 用户在聊天中输入
+    participant 幽灵文本 as memory_ghost_text.js
+    participant 引擎 as memory_engine.js
+    participant 客户端 as xmem_client.js
+    participant AMC as AMC (localhost:8899)
+    
+    用户->>幽灵文本: 检测到按键
+    幽灵文本->>引擎: 用当前输入查询
+    引擎->>客户端: POST /v1/memory/search
+    客户端->>AMC: HTTP 请求
+    AMC-->>客户端: 排序后的记忆结果
+    客户端-->>引擎: 解析后的结果
+    引擎-->>幽灵文本: 最佳建议
+    幽灵文本-->>用户: 渲染内联幽灵文本
+    
+    Note over 用户,AMC: 自动摄入（后台）
+    用户->>客户端: 检测到完成的对话轮次 (memory_auto_ingest.js)
+    客户端->>AMC: POST /v1/memory/ingest
+    AMC-->>客户端: { status: "success", id: "..." }
+```
+
+### AMC 斜杠命令
+
+`memory_commands.js` 模块提供聊天内命令界面：
+
+| 命令 | 操作 |
+| :--- | :--- |
+| `/recall <查询>` | 在 AMC 中搜索匹配的记忆并内联显示结果 |
+| `/search <查询>` | 直接对本地数据库进行原始语义向量搜索 |
+| `/forget <id>` | 从本地存储中移除指定的记忆条目 |
+
+---
+
+## 🔒 安全性
+
+- 内容脚本只会运行在 `manifest.json` 中列出的提供方域名上——没有通配符主机权限。
+- 抓取到的上下文会先在本地通过 TF-IDF 压缩，然后才会开始传输。
+- **X25519 密钥交换** 和 **AES-256-GCM 加密** 保护所有中继和二维码传输。
+- Cloudflare 中继只接收不透明密文，绝不接触解密密钥或明文转写。
+- 主机权限限定于 4 个受支持的 AI 提供方、中继端点和本地 AMC 服务器（`localhost:8899`）。
+- 额度检测完全发生在页面内部——扩展响应的是用户已经能看到的 UI 状态。
+- 内容安全策略将扩展页面限制为 `self` 来源，仅开放字体范围例外。
 
 ---
 
