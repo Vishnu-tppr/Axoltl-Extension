@@ -532,4 +532,3 @@ input:checked + .toggle-slider:before {
   position: absolute !important;
   top: -9999px !important;
 }
-

@@ -3,123 +3,22 @@
   "name": "Axoltl Session Handoff",
   "version": "0.3.0",
   "description": "Secure cross-provider and cross-device AI session handoff with persistent local memory.",
-  "icons": {
-    "16": "assets/axoltl-icon-16.png",
-    "32": "assets/axoltl-icon-32.png",
-    "48": "assets/axoltl-icon-48.png",
-    "128": "assets/axoltl-icon-128.png"
-  },
-  "permissions": [
-    "storage",
-    "tabs",
-    "activeTab",
-    "scripting",
-    "notifications",
-    "clipboardWrite"
-  ],
+  "icons": { "16": "assets/axoltl-icon-16.png", "32": "assets/axoltl-icon-32.png", "48": "assets/axoltl-icon-48.png", "128": "assets/axoltl-icon-128.png" },
+  "permissions": ["storage", "tabs", "activeTab", "scripting", "notifications", "clipboardWrite"],
   "host_permissions": [
-    "https://claude.ai/*",
-    "https://chatgpt.com/*",
-    "https://chat.openai.com/*",
-    "https://gemini.google.com/*",
-    "https://www.perplexity.ai/*",
-    "https://perplexity.ai/*",
+    "https://claude.ai/*", "https://chatgpt.com/*", "https://chat.openai.com/*",
+    "https://gemini.google.com/*", "https://www.perplexity.ai/*", "https://perplexity.ai/*",
     "https://axoltl-relay.vishnu-tppr.workers.dev/*",
-    "http://localhost:8000/*",
-    "http://127.0.0.1:8000/*",
-    "http://localhost:8899/*",
-    "http://127.0.0.1:8899/*"
+    "http://localhost:8000/*", "http://127.0.0.1:8000/*", "http://localhost:8899/*", "http://127.0.0.1:8899/*"
   ],
-  "background": {
-    "service_worker": "background/service_worker.js",
-    "type": "module"
-  },
-  "action": {
-    "default_popup": "popup/popup.html",
-    "default_title": "Axoltl",
-    "default_icon": {
-      "16": "assets/axoltl-icon-16.png",
-      "32": "assets/axoltl-icon-32.png",
-      "48": "assets/axoltl-icon-48.png"
-    }
-  },
+  "background": { "service_worker": "background/service_worker.ts", "type": "module" },
+  "action": { "default_popup": "popup/popup.html", "default_title": "Axoltl", "default_icon": { "16": "assets/axoltl-icon-16.png", "32": "assets/axoltl-icon-32.png", "48": "assets/axoltl-icon-48.png" } },
   "content_scripts": [
-    {
-      "matches": ["https://claude.ai/*"],
-      "js": [
-        "content/claude_scraper.js",
-        "content/quota_detector.js",
-        "content/context_compressor.js",
-        "content/provider_injector.js",
-        "content/xmem_client.js",
-        "content/memory_engine.js",
-        "content/memory_ghost_text.js",
-        "content/memory_commands.js",
-        "content/memory_auto_ingest.js",
-        "content/memory_injector.js"
-      ],
-      "run_at": "document_idle",
-      "all_frames": false
-    },
-    {
-      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
-      "js": [
-        "content/openai_scraper.js",
-        "content/quota_detector.js",
-        "content/context_compressor.js",
-        "content/provider_injector.js",
-        "content/xmem_client.js",
-        "content/memory_engine.js",
-        "content/memory_ghost_text.js",
-        "content/memory_commands.js",
-        "content/memory_auto_ingest.js",
-        "content/memory_injector.js"
-      ],
-      "run_at": "document_idle",
-      "all_frames": false
-    },
-    {
-      "matches": ["https://gemini.google.com/*"],
-      "js": [
-        "content/gemini_scraper.js",
-        "content/quota_detector.js",
-        "content/context_compressor.js",
-        "content/provider_injector.js",
-        "content/xmem_client.js",
-        "content/memory_engine.js",
-        "content/memory_ghost_text.js",
-        "content/memory_commands.js",
-        "content/memory_auto_ingest.js",
-        "content/memory_injector.js"
-      ],
-      "run_at": "document_idle",
-      "all_frames": false
-    },
-    {
-      "matches": ["https://www.perplexity.ai/*", "https://perplexity.ai/*"],
-      "js": [
-        "content/perplexity_scraper.js",
-        "content/quota_detector.js",
-        "content/context_compressor.js",
-        "content/provider_injector.js",
-        "content/xmem_client.js",
-        "content/memory_engine.js",
-        "content/memory_ghost_text.js",
-        "content/memory_commands.js",
-        "content/memory_auto_ingest.js",
-        "content/memory_injector.js"
-      ],
-      "run_at": "document_idle",
-      "all_frames": false
-    }
+    { "matches": ["https://claude.ai/*"], "js": ["content/providers/claude_scraper.ts","content/lib/quota_detector.ts","content/lib/context_compressor.ts","content/lib/provider_injector.ts","content/lib/xmem_client.ts","content/memory/memory_engine.ts","content/memory/memory_ghost_text.ts","content/memory/memory_commands.ts","content/memory/memory_auto_ingest.ts","content/memory/memory_injector.ts","content/axoltl-content.ts"], "run_at": "document_idle", "all_frames": false },
+    { "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"], "js": ["content/providers/openai_scraper.ts","content/lib/quota_detector.ts","content/lib/context_compressor.ts","content/lib/provider_injector.ts","content/lib/xmem_client.ts","content/memory/memory_engine.ts","content/memory/memory_ghost_text.ts","content/memory/memory_commands.ts","content/memory/memory_auto_ingest.ts","content/memory/memory_injector.ts","content/axoltl-content.ts"], "run_at": "document_idle", "all_frames": false },
+    { "matches": ["https://gemini.google.com/*"], "js": ["content/providers/gemini_scraper.ts","content/lib/quota_detector.ts","content/lib/context_compressor.ts","content/lib/provider_injector.ts","content/lib/xmem_client.ts","content/memory/memory_engine.ts","content/memory/memory_ghost_text.ts","content/memory/memory_commands.ts","content/memory/memory_auto_ingest.ts","content/memory/memory_injector.ts","content/axoltl-content.ts"], "run_at": "document_idle", "all_frames": false },
+    { "matches": ["https://www.perplexity.ai/*", "https://perplexity.ai/*"], "js": ["content/providers/perplexity_scraper.ts","content/lib/quota_detector.ts","content/lib/context_compressor.ts","content/lib/provider_injector.ts","content/lib/xmem_client.ts","content/memory/memory_engine.ts","content/memory/memory_ghost_text.ts","content/memory/memory_commands.ts","content/memory/memory_auto_ingest.ts","content/memory/memory_injector.ts","content/axoltl-content.ts"], "run_at": "document_idle", "all_frames": false }
   ],
-  "web_accessible_resources": [
-    {
-      "resources": ["crypto/noise.js", "libs/qrcode.min.js", "assets/*"],
-      "matches": ["<all_urls>"]
-    }
-  ],
-  "content_security_policy": {
-    "extension_pages": "default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com"
-  }
+  "web_accessible_resources": [{ "resources": ["assets/*"], "matches": ["<all_urls>"] }],
+  "content_security_policy": { "extension_pages": "default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com" }
 }

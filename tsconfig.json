@@ -3,11 +3,14 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "esModuleInterop": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "strict": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["chrome", "jest"]
+    "outDir": "dist",
+    "types": ["chrome-types"]
   },
-  "include": ["src/**/*"]
+  "include": ["popup/src/**/*.ts", "content/**/*.ts", "background/**/*.ts", "crypto/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }
