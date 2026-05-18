@@ -30,15 +30,15 @@ The extension sits closest to the source of truth: the provider web page. It obs
 graph TD
     DOM["🌐 Provider DOM<br/><small>claude.ai · chatgpt.com · gemini · perplexity</small>"]
     
-    DOM -->|"MutationObserver<br/>claude_scraper.js"| CAP["📋 Session Captured"]
+    DOM -->|"MutationObserver<br/>claude_scraper.ts"| CAP["📋 Session Captured"]
     
     CAP --> MEM["🧠 Memory Pipeline"]
     CAP --> COMP["⚙️ TF-IDF 3-Pass Compression"]
     
     subgraph mem ["Axoltl Memory Core (AMC)"]
         direction LR
-        MEM -->|"xmem_client.js<br/>POST /v1/memory/ingest"| AMC["🗄️ AMC<br/>localhost:8899"]
-        AMC -->|"POST /v1/memory/search"| ENGINE["memory_engine.js"]
+        MEM -->|"xmem_client.ts<br/>POST /v1/memory/ingest"| AMC["🗄️ AMC<br/>localhost:8899"]
+        AMC -->|"POST /v1/memory/search"| ENGINE["memory_engine.ts"]
         ENGINE --> GHOST["👻 Ghost-Text<br/>Autocomplete"]
     end
     
@@ -69,37 +69,53 @@ graph TD
 Axoltl-Extension/
 ├── manifest.json                   # Manifest V3 declaration (v0.3.0)
 ├── tsconfig.json                   # TypeScript configuration
+├── vite.config.ts                  # Vite build configuration with @crxjs/vite-plugin
+├── package.json                    # Package metadata & build scripts
 ├── .env                            # Environment variables (relay URLs)
 │
 ├── background/
-│   └── service_worker.js           # Background orchestrator (relay push, FCM, tab management)
+│   └── service_worker.ts           # Background orchestrator (relay push, FCM, tab management)
 │
 ├── content/                        # Content scripts injected per-provider
-│   ├── claude_scraper.js           # claude.ai DOM MutationObserver
-│   ├── openai_scraper.js           # chatgpt.com / chat.openai.com DOM watcher
-│   ├── gemini_scraper.js           # gemini.google.com DOM watcher
-│   ├── perplexity_scraper.js       # perplexity.ai DOM watcher
-│   ├── quota_detector.js           # Detects provider-specific quota/rate-limit walls
-│   ├── context_compressor.js       # TF-IDF 3-pass text compression pipeline
-│   ├── provider_injector.js        # Injects compressed context into target provider tabs
-│   ├── xmem_client.js              # HTTP client for Axoltl Memory Core (AMC) API
-│   ├── memory_engine.js            # Search orchestrator: queries AMC and ranks results
-│   ├── memory_ghost_text.js        # Real-time autocomplete overlay in chat input fields
-│   ├── memory_commands.js          # Slash-command interface (/recall, /forget, /search)
-│   ├── memory_auto_ingest.js       # Background auto-ingestion of completed conversation turns
-│   └── memory_injector.js          # Injects retrieved AMC context into provider prompt fields
+│   ├── axoltl-content.ts           # Main content entry point coordinates scraper and memory layers
+│   │
+│   ├── providers/                  # Tailored scrapers injected per provider
+│   │   ├── claude_scraper.ts       # claude.ai DOM MutationObserver
+│   │   ├── openai_scraper.ts       # chatgpt.com / chat.openai.com DOM watcher
+│   │   ├── gemini_scraper.ts       # gemini.google.com DOM watcher
+│   │   └── perplexity_scraper.ts   # perplexity.ai DOM watcher
+│   │
+│   ├── lib/                        # Core shared libraries and utilities
+│   │   ├── quota_detector.ts       # Detects provider-specific quota/rate-limit walls
+│   │   ├── context_compressor.ts   # TF-IDF 3-pass text compression pipeline
+│   │   ├── provider_injector.ts    # Injects compressed context into target provider tabs
+│   │   └── xmem_client.ts          # HTTP client for Axoltl Memory Core (AMC) API
+│   │
+│   └── memory/                     # Local semantic memory components
+│       ├── memory_engine.ts        # Search orchestrator: queries AMC and ranks results
+│       ├── memory_ghost_text.ts    # Real-time autocomplete overlay in chat input fields
+│       ├── memory_commands.ts      # Slash-command interface (/recall, /forget, /search)
+│       ├── memory_auto_ingest.ts   # Background auto-ingestion of completed conversation turns
+│       └── memory_injector.ts      # Injects retrieved AMC context into provider prompt fields
 │
 ├── popup/
 │   ├── popup.html                  # Extension popup UI shell
-│   ├── popup.js                    # State machine: provider detection, handoff triggers, QR pairing
-│   └── popup.css                   # Premium teal-glow UI theme
+│   ├── popup.css                   # Premium teal-glow UI theme
+│   └── src/                        # Modular popup scripts
+│       ├── main.ts                 # Popup state machine & entry point
+│       ├── constants.ts            # Shared popup constants
+│       ├── dom.ts                  # DOM element selectors and utilities
+│       ├── helpers.ts              # Encryption, formatting, and DOM helpers
+│       ├── mascot.ts               # UI mascot animation state managers
+│       ├── memory.ts               # Local popup memory configuration and toggles
+│       ├── qr.ts                   # Pairing token QR renderer using local engine
+│       ├── settings.ts             # Settings persistence layer
+│       ├── toast.ts                # Custom clean notification toasts
+│       └── xmem.ts                 # Popup bridge client for AMC status checks
 │
 ├── crypto/
-│   ├── noise.js                    # Noise Protocol XX handshake (BLE + relay key exchange)
-│   └── qrcode.js                   # QR code encoder for device pairing
-│
-├── libs/
-│   └── qrcode.min.js              # Vendored QR code rendering library
+│   ├── noise.ts                    # Noise Protocol XX handshake (BLE + relay key exchange)
+│   └── qrcode.ts                   # Native TypeScript QR code generator & renderer
 │
 └── assets/                         # SVG mascots, animated states, provider icons
     ├── axoltl-animated.svg         # Main animated mascot
@@ -120,29 +136,30 @@ Axoltl-Extension/
 
 ## 📡 Supported Providers & Content Script Matrix
 
-Each provider page receives a tailored scraper plus the full shared pipeline. All scripts run at `document_idle` on the top frame only:
+Each provider page receives a tailored scraper plus the full shared pipeline. All scripts are written in modern TypeScript, bundled and built by Vite, and run at `document_idle` on the top frame only:
 
 | Provider Domain | Scraper | Shared Pipeline (always injected) |
 | :--- | :--- | :--- |
-| `claude.ai` | `claude_scraper.js` | `quota_detector` · `context_compressor` · `provider_injector` · `xmem_client` · `memory_engine` · `memory_ghost_text` · `memory_commands` · `memory_auto_ingest` · `memory_injector` |
-| `chatgpt.com` / `chat.openai.com` | `openai_scraper.js` | *(same shared pipeline)* |
-| `gemini.google.com` | `gemini_scraper.js` | *(same shared pipeline)* |
-| `perplexity.ai` / `www.perplexity.ai` | `perplexity_scraper.js` | *(same shared pipeline)* |
+| `claude.ai` | `providers/claude_scraper.ts` | `lib/quota_detector.ts` · `lib/context_compressor.ts` · `lib/provider_injector.ts` · `lib/xmem_client.ts` · `memory/memory_engine.ts` · `memory/memory_ghost_text.ts` · `memory/memory_commands.ts` · `memory/memory_auto_ingest.ts` · `memory/memory_injector.ts` · `axoltl-content.ts` |
+| `chatgpt.com` / `chat.openai.com` | `providers/openai_scraper.ts` | *(same shared pipeline)* |
+| `gemini.google.com` | `providers/gemini_scraper.ts` | *(same shared pipeline)* |
+| `perplexity.ai` / `www.perplexity.ai` | `providers/perplexity_scraper.ts` | *(same shared pipeline)* |
 
 ### What Each Layer Does
 
 | Script | Layer | Purpose |
 | :--- | :--- | :--- |
-| `*_scraper.js` | **Capture** | Attaches a `MutationObserver` to the provider's chat DOM, extracts user/assistant turns, and normalizes them into a structured conversation payload. |
-| `quota_detector.js` | **Detection** | Monitors provider-specific UI signals (rate-limit banners, disabled send buttons) to detect when the user has hit a usage ceiling. |
-| `context_compressor.js` | **Compression** | Applies a TF-IDF 3-pass text compression algorithm to reduce conversation payloads to ~3000 tokens while preserving semantic fidelity. |
-| `provider_injector.js` | **Injection** | Launches a new tab for the target provider and injects compressed context as a pre-filled `?q=` prompt parameter. |
-| `xmem_client.js` | **AMC Client** | HTTP client wrapper for the local Axoltl Memory Core API (`localhost:8899`). Handles `POST /v1/memory/ingest`, `POST /v1/memory/search`, and `POST /v1/memory/retrieve`. |
-| `memory_engine.js` | **Search** | Orchestrates semantic search queries against AMC, ranks results by cosine similarity, and formats them for UI consumption. |
-| `memory_ghost_text.js` | **Autocomplete** | Renders inline ghost-text suggestions in the active chat input field, powered by real-time AMC vector search results. |
-| `memory_commands.js` | **Commands** | Provides a slash-command interface (`/recall`, `/forget`, `/search`) for explicit memory operations within the chat input. |
-| `memory_auto_ingest.js` | **Auto-Ingest** | Silently ingests completed conversation turns (user query + assistant response) into AMC in the background without user intervention. |
-| `memory_injector.js` | **Context Inject** | Retrieves relevant long-term memories from AMC and injects them as context preambles into the provider's prompt field before sending. |
+| `providers/*_scraper.ts` | **Capture** | Attaches a `MutationObserver` to the provider's chat DOM, extracts user/assistant turns, and normalizes them into a structured conversation payload. |
+| `lib/quota_detector.ts` | **Detection** | Monitors provider-specific UI signals (rate-limit banners, disabled send buttons) to detect when the user has hit a usage ceiling. |
+| `lib/context_compressor.ts` | **Compression** | Applies a TF-IDF 3-pass text compression algorithm to reduce conversation payloads to ~3000 tokens while preserving semantic fidelity. |
+| `lib/provider_injector.ts` | **Injection** | Launches a new tab for the target provider and injects compressed context as a pre-filled `?q=` prompt parameter. |
+| `lib/xmem_client.ts` | **AMC Client** | HTTP client wrapper for the local Axoltl Memory Core API (`localhost:8899`). Handles `POST /v1/memory/ingest`, `POST /v1/memory/search`, and `POST /v1/memory/retrieve`. |
+| `memory/memory_engine.ts` | **Search** | Orchestrates semantic search queries against AMC, ranks results by cosine similarity, and formats them for UI consumption. |
+| `memory/memory_ghost_text.ts` | **Autocomplete** | Renders inline ghost-text suggestions in the active chat input field, powered by real-time AMC vector search results. |
+| `memory/memory_commands.ts` | **Commands** | Provides a slash-command interface (`/recall`, `/forget`, `/search`) for explicit memory operations within the chat input. |
+| `memory/memory_auto_ingest.ts` | **Auto-Ingest** | Silently ingests completed conversation turns (user query + assistant response) into AMC in the background without user intervention. |
+| `memory/memory_injector.ts` | **Context Inject** | Retrieves relevant long-term memories from AMC and injects them as context preambles into the provider's prompt field before sending. |
+| `axoltl-content.ts` | **Coordinator** | Main entry content script that initializes all systems on the active tab and coordinates page-level events. |
 
 ---
 
@@ -257,9 +274,9 @@ The extension communicates with the local **Axoltl Memory Core** server running 
 ```mermaid
 sequenceDiagram
     participant User as User Types in Chat
-    participant GhostText as memory_ghost_text.js
-    participant Engine as memory_engine.js
-    participant Client as xmem_client.js
+    participant GhostText as memory_ghost_text.ts
+    participant Engine as memory_engine.ts
+    participant Client as xmem_client.ts
     participant AMC as AMC (localhost:8899)
     
     User->>GhostText: Keystroke detected
@@ -272,14 +289,14 @@ sequenceDiagram
     GhostText-->>User: Render inline ghost text overlay
     
     Note over User,AMC: Auto-Ingest (background)
-    User->>Client: Completed turn detected (memory_auto_ingest.js)
+    User->>Client: Completed turn detected (memory_auto_ingest.ts)
     Client->>AMC: POST /v1/memory/ingest
     AMC-->>Client: { status: "success", id: "..." }
 ```
 
 ### AMC Slash Commands
 
-The `memory_commands.js` module provides an in-chat command interface:
+The `memory_commands.ts` module provides an in-chat command interface:
 
 | Command | Action |
 | :--- | :--- |
@@ -306,11 +323,13 @@ The `memory_commands.js` module provides an in-chat command interface:
 ```bash
 git clone https://github.com/Vishnu-tppr/Axoltl.git
 cd Axoltl/Axoltl-Extension
+npm install
+npm run build
 ```
 
 1. Open Chrome → `chrome://extensions/`
 2. Enable **Developer mode** (top right toggle)
-3. Click **Load unpacked** → select the `Axoltl-Extension` folder
+3. Click **Load unpacked** → select the `dist` folder under `Axoltl-Extension`
 4. Visit `claude.ai`, `chatgpt.com`, `gemini.google.com`, or `perplexity.ai`
 5. *(Optional)* Start the local AMC server for long-term memory features:
    ```bash
